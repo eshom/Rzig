@@ -1,4 +1,7 @@
 const std = @import("std");
+
+//TODO: Check R > 4.4.0 is installed
+
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
