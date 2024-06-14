@@ -2,45 +2,133 @@
 
 const std = @import("std");
 const mem = std.mem;
+const testing = std.testing;
 
-const assert = std.debug.assert;
+const RAssert = @import("errors.zig").RAssert;
 
 const Allocator = mem.Allocator;
 
 const r = @import("r.zig");
 
-/// Thin Wrapper to R's "Transient storage allocation".
-/// R reclaims memory at the end of calls to `.C`, `.Call`, or `.External`.
-/// User does not have to free memory.
+/// Points to start of allocated region for free and resize.
+/// Following implementation of `std.heap.c_allocator`.
+fn getHeader(ptr: [*]u8) *[*]u8 {
+    return @as(*[*]u8, @ptrFromInt(@intFromPtr(ptr) - @sizeOf(usize)));
+}
+
+/// Wrapper to R's memory allocator.
+/// Implements the `std.mem.Allocator` interface.
+/// The underlying allocator is very similar to C's `malloc` but provides R error signaling.
 ///
-/// free() is a no-op.
-/// resize() is a no-op.
-///
-/// Memory returned is only guaranteed to be aligned as required for C double pointers
-///
-/// Reference: https://cran.r-project.org/doc/FAQ/R-exts.html#Transient-storage-allocation
-pub const RTransientAllocator: Allocator = .{
+/// User must free memory. It is not freed by R's GC.
+pub const r_allocator: Allocator = .{
     .ptr = undefined,
-    .vtable = &transient_allocator_vtable,
+    .vtable = &r_allocator_vtable,
 };
 
-const transient_allocator_vtable: Allocator.VTable = .{
-    .alloc = rawRAlloc,
-    .resize = Allocator.noResize,
-    .free = Allocator.noFree,
+const r_allocator_vtable: Allocator.VTable = .{
+    .alloc = RCalloc,
+    .resize = RRealloc,
+    .free = RFree,
 };
 
-fn rawRAlloc(ptr: *anyopaque, len: usize, ptr_align: u8, ret_addr: usize) ?[*]u8 {
-    _ = ptr;
+/// Following implementation of `std.heap.c_allocator`.
+/// R's allocator is an interace to malloc() but with R error signaling.
+///
+/// Caller should free memory.
+/// It is not freed by R's GC.
+fn RCalloc(ctx: *anyopaque, size: usize, ptr_align_exp: u8, ret_addr: usize) ?[*]u8 {
+    _ = ctx;
     _ = ret_addr;
 
-    assert(len > 0); // trying to allocating 0 bytes
-    const raw_out: ?[*]u8 = r.R_alloc(len, ptr_align);
-    const out = raw_out orelse return null;
-    // From R-exts doc:
-    // "The memory returned is only guaranteed to be aligned as required for `double` pointers:
-    // take precautions if casting to a pointer which needs more."
-    assert(mem.isAligned(@intFromPtr(out), @alignOf(f64)));
+    RAssert(size > 0, "trying to allocate 0 bytes");
 
-    return out;
+    const alignment = @as(usize, 1) << @as(Allocator.Log2Align, @intCast(ptr_align_exp));
+
+    // Following implementation example in `std.heap.c_allocator`
+    const unaligned_ptr: [*]u8 = @ptrCast(r.R_chk_calloc(size + alignment - 1 + @sizeOf(usize), 1) orelse return null);
+    const unaligned_addr = @intFromPtr(unaligned_ptr);
+    const aligned_addr = mem.alignForward(usize, unaligned_addr + @sizeOf(usize), alignment);
+    const aligned_ptr = unaligned_ptr + (aligned_addr - unaligned_addr);
+    getHeader(aligned_ptr).* = unaligned_ptr;
+
+    return aligned_ptr;
+}
+
+fn RRealloc(ctx: *anyopaque, buf: []u8, buf_align: u8, new_len: usize, ret_addr: usize) bool {
+    _ = ctx;
+    _ = buf_align;
+    _ = ret_addr;
+
+    RAssert(new_len > 0, "trying to resize to 0 bytes");
+
+    // Shrinking retains the same address
+    // Always refuse to resize in-place, R's realloc may invalidate the pointer
+    if (new_len <= buf.len) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+fn RFree(ctx: *anyopaque, buf: []u8, buf_align: u8, ret_addr: usize) void {
+    _ = buf_align;
+    _ = ctx;
+    _ = ret_addr;
+
+    const unaligned_ptr = getHeader(buf.ptr).*;
+    r.R_chk_free(unaligned_ptr);
+}
+
+test "allocation print" {
+    const result = try std.process.Child.run(.{
+        .allocator = testing.allocator,
+        .argv = &.{
+            "Rscript",
+            "--vanilla",
+            "-e",
+            "dyn.load('zig-out/tests/lib/libRtests.so'); .Call('allocPrintTest');",
+        },
+    });
+
+    defer testing.allocator.free(result.stdout);
+    defer testing.allocator.free(result.stderr);
+
+    const expected =
+        \\XXXXXXXXXX
+        \\[1] TRUE
+        \\
+    ;
+
+    testing.expectEqualStrings(expected, result.stdout) catch |err| {
+        std.debug.print("stderr:\n{s}\n", .{result.stderr});
+        return err;
+    };
+}
+
+test "allocation, resize, print" {
+    const result = try std.process.Child.run(.{
+        .allocator = testing.allocator,
+        .argv = &.{
+            "Rscript",
+            "--vanilla",
+            "-e",
+            "dyn.load('zig-out/tests/lib/libRtests.so'); .Call('allocResizePrintTest');",
+        },
+    });
+
+    defer testing.allocator.free(result.stdout);
+    defer testing.allocator.free(result.stderr);
+
+    const expected =
+        \\Expecting this message when resizing
+        \\0 1 2 3 4 5 6 7 8 9 
+        \\[1] TRUE
+        \\
+    ;
+
+    testing.expectEqualStrings(expected, result.stdout) catch |err| {
+        std.debug.print("stderr:\n{s}\n", .{result.stderr});
+        return err;
+    };
 }
