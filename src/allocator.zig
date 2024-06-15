@@ -100,7 +100,7 @@ test "allocation print" {
         \\
     ;
 
-    testing.expectEqualStrings(expected, result.stdout) catch |err| {
+    testing.expectEqualSlices(u8, expected, result.stdout) catch |err| {
         std.debug.print("stderr:\n{s}\n", .{result.stderr});
         return err;
     };
@@ -122,12 +122,12 @@ test "allocation, resize, print" {
 
     const expected =
         \\Expecting this message when resizing
-        \\0 1 2 3 4 5 6 7 8 9 
+        \\{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19 }
         \\[1] TRUE
         \\
     ;
 
-    testing.expectEqualStrings(expected, result.stdout) catch |err| {
+    testing.expectEqualSlices(u8, expected, result.stdout) catch |err| {
         std.debug.print("stderr:\n{s}\n", .{result.stderr});
         return err;
     };
