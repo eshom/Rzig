@@ -10,6 +10,6 @@ pub const warningCallImmediate = r.Rf_warningcall_immediate;
 
 pub fn RAssert(ok: bool, str: []const u8) void {
     if (!ok) {
-        stop("Assertion error: %s\n", @as([*:0]const u8, @ptrCast(str)));
+        stop("Assertion error: %.*s\n", str.len, str.ptr);
     }
 }

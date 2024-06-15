@@ -6,10 +6,32 @@ const r = @import("r.zig");
 /// Must use R API functions to access values and coerce to other types.
 pub const RObject = ?*r.struct_SEXPREC;
 
-pub const Rboolean = enum(c_uint) {
+pub const RBoolean = enum(c_uint) {
     False = 0,
     True = 1,
 };
+
+// NOTE: complex not supported see https://github.com/ziglang/zig/issues/16278
+//
+// const r_legacy_complex = @hasDecl(r, "R_LEGACY_RCOMPLEX");
+// pub const RComplex = if (r_legacy_complex)
+// out: {
+//     break :out extern struct {
+//         r: f64,
+//         i: f64,
+//     };
+// } else out: {
+//     break :out extern union {
+//         anon: extern struct {
+//             r: f64,
+//             i: f64,
+//         },
+//         private_data_c: [2]f64,
+//     };
+// };
+
+/// Points to Rtype.NULL (NILSXP)
+pub const RNull = r.R_NilValue;
 
 ///no   SEXPTYPE      Description
 ///0    NILSXP        NULL
@@ -72,6 +94,132 @@ pub const CoercionError = error{
     NotAVector,
 };
 
+/// Returns `.True` for any atomic vector type, lists, expressions
+pub fn isVector(obj: RObject) RBoolean {
+    if (r.Rf_isVector(obj) == 1) {
+        return .True;
+    }
+    return .False;
+}
+
+/// Returns `.True` for any atomic vector type
+pub fn isVectorAtomic(obj: RObject) RBoolean {
+    if (r.Rf_isVectorAtomic(obj) == 1) {
+        return .True;
+    }
+    return .False;
+}
+
+/// Returns `.True` for R list or R expression
+pub fn isVectorList(obj: RObject) RBoolean {
+    if (r.Rf_isVectorList(obj) == 1) {
+        return .True;
+    }
+    return .False;
+}
+
+/// Returns `.True` if matrix has a length-2 `dim` attribute
+pub fn isMatrix(obj: RObject) RBoolean {
+    if (r.Rf_isMatrix(obj) == 1) {
+        return .True;
+    }
+    return .False;
+}
+
+pub fn isPairList(obj: RObject) RBoolean {
+    if (r.Rf_isPairList(obj) == 1) {
+        return .True;
+    }
+    return .False;
+}
+
+pub fn isPrimitive(obj: RObject) RBoolean {
+    if (r.Rf_isPrimitive(obj) == 1) {
+        return .True;
+    }
+    return .False;
+}
+
+pub fn isTs(obj: RObject) RBoolean {
+    if (r.Rf_isTs(obj) == 1) {
+        return .True;
+    }
+    return .False;
+}
+
+pub fn isNumeric(obj: RObject) RBoolean {
+    if (r.Rf_isNumeric(obj) == 1) {
+        return .True;
+    }
+    return .False;
+}
+
+/// R matrix is also an R array
+pub fn isArray(obj: RObject) RBoolean {
+    if (r.Rf_isArray(obj) == 1) {
+        return .True;
+    }
+    return .False;
+}
+
+pub fn isFactor(obj: RObject) RBoolean {
+    if (r.Rf_isFactor(obj) == 1) {
+        return .True;
+    }
+    return .False;
+}
+
+pub fn isObject(obj: RObject) RBoolean {
+    if (r.Rf_isObject(obj) == 1) {
+        return .True;
+    }
+    return .False;
+}
+
+pub fn isFunction(obj: RObject) RBoolean {
+    if (r.Rf_isFunction(obj) == 1) {
+        return .True;
+    }
+    return .False;
+}
+
+pub fn isLanguage(obj: RObject) RBoolean {
+    if (r.Rf_isLanguage(obj) == 1) {
+        return .True;
+    }
+    return .False;
+}
+
+pub fn isNewList(obj: RObject) RBoolean {
+    if (r.Rf_isNewList(obj) == 1) {
+        return .True;
+    }
+    return .False;
+}
+
+pub fn isList(obj: RObject) RBoolean {
+    if (r.Rf_isList(obj) == 1) {
+        return .True;
+    }
+    return .False;
+}
+
+pub fn isOrdered(obj: RObject) RBoolean {
+    if (r.Rf_isOrdered(obj) == 1) {
+        return .True;
+    }
+    return .False;
+}
+
+pub fn isUnOrdered(obj: RObject) RBoolean {
+    if (r.Rf_isUnordered(obj) == 1) {
+        return .True;
+    }
+    return .False;
+}
+
+test "R type checks" {}
+
 /// Coerces `RObject` to a specific `RType`.
 /// Returns `RObject` which points to requested type.
 /// If coercsion is not supported, returns `UnsupportedType`.
@@ -93,16 +241,16 @@ pub fn asVector(to: RType, from: RObject) CoercionError!RObject {
     return out;
 }
 
-/// Coerces a vector to a basic type.
+/// Coerces a vector to a more primitive type.
 ///
 /// `T` can be one of:
-/// bool, c_int, f64,
+/// bool, c_int, f64
 /// Otherwise error `UnsupportedType` is returned
 ///
 /// `from` must be a vector otherwise `NotAVector` error is returned.
 /// Vectors with length greater than 1 return only their first element.
 pub fn asPrimitive(T: type, from: RObject) CoercionError!T {
-    const is_vec: Rboolean = @enumFromInt(r.Rf_isVector(from));
+    const is_vec: RBoolean = isVector(from);
     if (is_vec == .False) {
         return CoercionError.NotAVector;
     }

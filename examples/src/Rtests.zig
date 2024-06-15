@@ -6,8 +6,17 @@ fn errorString(err: anyerror) [*:0]const u8 {
 }
 
 export fn hello() rzig.RObject {
-    const writer = rzig.print.RStdoutWriter().writer();
+    const writer = rzig.io.RStdoutWriter().writer();
     writer.print("Hello, World!\n", .{}) catch unreachable;
+    return rzig.asScalarVector(true) catch |err| {
+        rzig.errors.stop("%s. In `hello()`: Problem while calling `asScalarVector()`\n", errorString(err));
+        unreachable;
+    };
+}
+
+export fn helloStderr() rzig.RObject {
+    const writer = rzig.io.RStderrWriter().writer();
+    writer.print("Hello, Error!\n", .{}) catch unreachable;
     return rzig.asScalarVector(true) catch |err| {
         rzig.errors.stop("%s. In `hello()`: Problem while calling `asScalarVector()`\n", errorString(err));
         unreachable;
@@ -16,7 +25,7 @@ export fn hello() rzig.RObject {
 
 export fn allocPrintTest() rzig.RObject {
     const allocator = rzig.heap.r_allocator;
-    const writer = rzig.print.RStdoutWriter().writer();
+    const writer = rzig.io.RStdoutWriter().writer();
 
     const buf = allocator.alloc(u8, 10) catch |err| {
         rzig.errors.stop("%s. In `allocPrintTest()`: Problem allocating memory\n", errorString(err));
@@ -38,7 +47,7 @@ export fn allocPrintTest() rzig.RObject {
 
 export fn allocResizePrintTest() rzig.RObject {
     const allocator = rzig.heap.r_allocator;
-    const writer = rzig.print.RStdoutWriter().writer();
+    const writer = rzig.io.RStdoutWriter().writer();
 
     const Integer = u32;
 

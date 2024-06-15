@@ -16,35 +16,10 @@ pub const internal_R_api = r;
 
 // R memory allocators
 pub const heap = @import("allocator.zig");
-pub const print = @import("print.zig");
+pub const io = @import("io.zig");
 pub const errors = @import("errors.zig");
-
-test "simple hello world function call" {
-    const result = try std.process.Child.run(.{
-        .allocator = testing.allocator,
-        .argv = &.{
-            "Rscript",
-            "--vanilla",
-            "-e",
-            "dyn.load('zig-out/tests/lib/libRtests.so'); .Call('hello');",
-        },
-    });
-
-    defer testing.allocator.free(result.stdout);
-    defer testing.allocator.free(result.stderr);
-
-    const expected =
-        \\Hello, World!
-        \\[1] TRUE
-        \\
-    ;
-
-    testing.expectEqualStrings(expected, result.stdout) catch |err| {
-        std.debug.print("stderr:\n{s}\n", .{result.stderr});
-        return err;
-    };
-}
 
 test {
     _ = @import("allocator.zig");
+    _ = @import("io.zig");
 }
