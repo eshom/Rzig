@@ -81,3 +81,20 @@ export fn allocResizePrintTest() rzig.RObject {
         unreachable;
     };
 }
+
+// export fn testAsVector(
+//     logical: rzig.RObject,
+//     integer: rzig.RObject,
+//     numeric: rzig.RObject,
+//     character: rzig.RObject,
+//     // complex: rzig.RObject,
+//     list: rzig.RObject,
+// ) rzig.RObject {
+//     const raw_integer = rzig.asVector(.RawVector, logical) catch unreachable;
+//     const raw_logical = rzig.asVector(.RawVector, integer) catch unreachable;
+//     const raw_numeric = rzig.asVector(.RawVector, numeric) catch unreachable;
+//     const raw_character = rzig.asVector(.RawVector, character) catch unreachable;
+//     const raw_list = rzig.asVector(.RawVector, list) catch unreachable;
+//
+//     return rzig.RNull;
+// }

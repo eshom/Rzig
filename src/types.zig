@@ -218,6 +218,7 @@ pub fn isUnOrdered(obj: RObject) RBoolean {
     return .False;
 }
 
+//TODO: write this test
 test "R type checks" {}
 
 /// Coerces `RObject` to a specific `RType`.
@@ -239,6 +240,14 @@ pub fn asVector(to: RType, from: RObject) CoercionError!RObject {
     };
 
     return out;
+}
+
+test "asVector" {
+    const code =
+    \\
+    \\
+    ;
+    _ = code; // autofix
 }
 
 /// Coerces a vector to a more primitive type.
