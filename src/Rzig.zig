@@ -9,6 +9,7 @@ const testing = std.testing;
 
 // R data types
 pub usingnamespace @import("types.zig");
+pub usingnamespace @import("constants.zig");
 
 // Internal R API exposed for convenience.
 // Intention is to deprecate when library is complete.

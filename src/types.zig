@@ -1,6 +1,9 @@
 //! R types and coercison functions
 
 const r = @import("r.zig");
+const constants = @import("constants.zig");
+
+const RNull = constants.RNull;
 
 /// General purpose R object (SEXP).
 /// Must use R API functions to access values and coerce to other types.
@@ -12,6 +15,7 @@ pub const RBoolean = enum(c_uint) {
 };
 
 // NOTE: complex not supported see https://github.com/ziglang/zig/issues/16278
+// TODO: Use an opaque pointer to support complex
 //
 // const r_legacy_complex = @hasDecl(r, "R_LEGACY_RCOMPLEX");
 // pub const RComplex = if (r_legacy_complex)
@@ -29,9 +33,6 @@ pub const RBoolean = enum(c_uint) {
 //         private_data_c: [2]f64,
 //     };
 // };
-
-/// Points to Rtype.NULL (NILSXP)
-pub const RNull = r.R_NilValue;
 
 ///no   SEXPTYPE      Description
 ///0    NILSXP        NULL
@@ -244,13 +245,13 @@ pub fn asVector(to: RType, from: RObject) CoercionError!RObject {
 
 test "asVector" {
     const code =
-    \\
-    \\
+        \\
+        \\
     ;
     _ = code; // autofix
 }
 
-/// Coerces a vector to a more primitive type.
+/// Coerces a vector to a primitive type.
 ///
 /// `T` can be one of:
 /// bool, c_int, f64
@@ -274,17 +275,20 @@ pub fn asPrimitive(T: type, from: RObject) CoercionError!T {
     return out;
 }
 
-pub fn asScalarVector(from: anytype) CoercionError!RObject {
+/// Coerces primitive type to R atomic vector.
+///
+/// Returns R NULL if coercsion is not supported.
+pub fn asScalarVector(from: anytype) RObject {
     const T = @TypeOf(from);
 
     const out = switch (T) {
         f64 => r.Rf_ScalarReal(from),
         bool => r.Rf_ScalarLogical(@intCast(@intFromBool(from))),
-        c_int, i32 => out: {
+        c_int, i32, comptime_int => out: {
             const from_int: c_int = from;
             break :out r.Rf_ScalarInteger(from_int);
         },
-        else => return CoercionError.UnsupportedType,
+        else => return RNull,
     };
 
     return out;

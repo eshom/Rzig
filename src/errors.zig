@@ -13,3 +13,7 @@ pub fn RAssert(ok: bool, str: []const u8) void {
         stop("Assertion error: %.*s\n", str.len, str.ptr);
     }
 }
+
+// pub fn stop() callconv(.C) {
+//
+// }

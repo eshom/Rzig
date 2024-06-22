@@ -40,32 +40,6 @@ pub fn RStdoutWriter() type {
     };
 }
 
-test "print to stdout" {
-    const result = try std.process.Child.run(.{
-        .allocator = testing.allocator,
-        .argv = &.{
-            "Rscript",
-            "--vanilla",
-            "-e",
-            "dyn.load('zig-out/tests/lib/libRtests.so'); .Call('hello');",
-        },
-    });
-
-    defer testing.allocator.free(result.stdout);
-    defer testing.allocator.free(result.stderr);
-
-    const expected =
-        \\Hello, World!
-        \\[1] TRUE
-        \\
-    ;
-
-    testing.expectEqualStrings(expected, result.stdout) catch |err| {
-        std.debug.print("stderr:\n{s}\n", .{result.stderr});
-        return err;
-    };
-}
-
 /// Implements `std.io.GenericWriter`
 /// Prints to R managed stderr
 /// When writing, will only return error if string length is longer than `c_int` max size
@@ -95,13 +69,20 @@ pub fn RStderrWriter() type {
 }
 
 test "print to stdout and stderr" {
+    const code =
+        \\dyn.load('zig-out/tests/lib/libRtests.so')
+        \\.Call('testHelloStderr')
+        \\.Call('testHello')
+        \\.Call('testHelloCFormat')
+    ;
+
     const result = try std.process.Child.run(.{
         .allocator = testing.allocator,
         .argv = &.{
             "Rscript",
             "--vanilla",
             "-e",
-            "dyn.load('zig-out/tests/lib/libRtests.so'); .Call('helloStderr');",
+            code,
         },
     });
 
@@ -113,8 +94,22 @@ test "print to stdout and stderr" {
         \\
     ;
 
+    const expected2 =
+        \\NULL
+        \\Hello, World!
+        \\NULL
+        \\%d%d%sHello, World!%d%d%s
+        \\NULL
+        \\
+    ;
+
     testing.expectEqualStrings(expected, result.stderr) catch |err| {
         std.debug.print("stderr:\n{s}\n", .{result.stderr});
+        return err;
+    };
+
+    testing.expectEqualStrings(expected2, result.stdout) catch |err| {
+        std.debug.print("stdout:\n{s}\n", .{result.stdout});
         return err;
     };
 }

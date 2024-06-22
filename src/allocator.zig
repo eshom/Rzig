@@ -87,7 +87,7 @@ test "allocation print" {
             "Rscript",
             "--vanilla",
             "-e",
-            "dyn.load('zig-out/tests/lib/libRtests.so'); .Call('allocPrintTest');",
+            "dyn.load('zig-out/tests/lib/libRtests.so'); .Call('testAllocPrint');",
         },
     });
 
@@ -96,7 +96,7 @@ test "allocation print" {
 
     const expected =
         \\XXXXXXXXXX
-        \\[1] TRUE
+        \\NULL
         \\
     ;
 
@@ -113,7 +113,7 @@ test "allocation, resize, print" {
             "Rscript",
             "--vanilla",
             "-e",
-            "dyn.load('zig-out/tests/lib/libRtests.so'); .Call('allocResizePrintTest');",
+            "dyn.load('zig-out/tests/lib/libRtests.so'); .Call('testAllocResizePrint');",
         },
     });
 
@@ -123,7 +123,7 @@ test "allocation, resize, print" {
     const expected =
         \\Expecting this message when resizing
         \\{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19 }
-        \\[1] TRUE
+        \\NULL
         \\
     ;
 

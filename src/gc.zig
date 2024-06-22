@@ -17,6 +17,10 @@ pub const ProtectStack = struct {
     pub const protect_stack_size: usize = 10000; // https://cran.r-project.org/doc/manuals/R-exts.html#Garbage-Collection
     len: usize = 0,
 
+    pub fn init() ProtectStack {
+        return .{};
+    }
+
     /// Pass an RObject, and get a GC protected RObject.
     /// Caller responsible to unprotect.
     ///
