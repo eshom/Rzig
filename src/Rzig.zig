@@ -23,4 +23,5 @@ pub const errors = @import("errors.zig");
 test {
     _ = @import("allocator.zig");
     _ = @import("io.zig");
+    _ = @import("errors.zig");
 }

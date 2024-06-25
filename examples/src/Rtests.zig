@@ -30,8 +30,8 @@ export fn testAllocPrint() RObject {
     const allocator = rzig.heap.r_allocator;
     const writer = rzig.io.RStdoutWriter().writer();
 
-    const buf = allocator.alloc(u8, 10) catch {
-        rzig.errors.stop("In `testAllocPrint()`: Problem allocating memory\n");
+    const buf = allocator.alloc(u8, 10) catch |err| {
+        rzig.errors.stop("{!}. In `testAllocPrint()`: Problem allocating memory\n", .{err});
         unreachable;
     };
     defer allocator.free(buf);
@@ -51,15 +51,15 @@ export fn testAllocResizePrint() RObject {
 
     const Integer = u32;
 
-    const buf = allocator.alloc(Integer, 20) catch {
-        rzig.errors.stop("In `testAllocResizePrint()`: Problem allocating memory\n");
+    const buf = allocator.alloc(Integer, 20) catch |err| {
+        rzig.errors.stop("{!}. In `testAllocResizePrint()`: Problem allocating memory\n", .{err});
         unreachable;
     };
     defer allocator.free(buf);
 
     const ptr_good = allocator.resize(buf, 20);
     if (!ptr_good) {
-        rzig.errors.stop("In `testAllocResizePrint()`: problem resizing memory, unexpected invalid pointer address\n");
+        rzig.errors.stop("In `testAllocResizePrint()`: problem resizing memory, unexpected invalid pointer address\n", .{});
         unreachable;
     }
 
@@ -79,10 +79,16 @@ export fn testAllocResizePrint() RObject {
     return r_null.*;
 }
 
-export fn testRCheckStack() RObject {
-    rzig.internal_R_api.R_CheckStack2(100_000_000);
+export fn testStop() RObject {
+    rzig.errors.stop("Test error message\n", .{});
 
-    return r_null.*;
+    unreachable;
+}
+
+export fn testStop2() RObject {
+    rzig.errors.stop("." ** 1000 ++ "\n", .{});
+
+    unreachable;
 }
 
 // export fn testAsVector(
