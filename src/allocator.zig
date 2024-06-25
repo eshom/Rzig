@@ -132,3 +132,23 @@ test "allocation, resize, print" {
         return err;
     };
 }
+
+test "R stack allocation" {
+    const result = try std.process.Child.run(.{
+        .allocator = testing.allocator,
+        .argv = &.{
+            "Rscript",
+            "--vanilla",
+            "-e",
+            "dyn.load('zig-out/tests/lib/libRtests.so'); .Call('testRCheckStack');",
+        },
+    });
+
+    defer testing.allocator.free(result.stdout);
+    defer testing.allocator.free(result.stderr);
+
+    std.debug.print("{s}", .{result.stderr});
+
+    try testing.expectStringStartsWith(result.stderr, "Error: C stack usage");
+    try testing.expectStringEndsWith(result.stderr, "is too close to the limit\nExecution halted\n");
+}
