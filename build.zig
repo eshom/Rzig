@@ -31,10 +31,7 @@ pub fn build(b: *std.Build) void {
         .pic = true,
     });
 
-    Rtests.linkLibC();
-    Rtests.root_module.addLibraryPath(.{ .cwd_relative = "/usr/lib64/R/lib/" });
-    Rtests.root_module.addSystemIncludePath(.{ .cwd_relative = "/usr/lib64/R/include/" });
-    Rtests.root_module.linkSystemLibrary("R", .{});
+    Rtests.linkSystemLibrary2("libR", .{ .use_pkg_config = .force });
     Rtests.root_module.addImport("Rzig", Rzig);
 
     const Rtests_install = b.addInstallArtifact(
@@ -53,11 +50,8 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
-    // Include and Link R
-    Rzig_tests.linkLibC(); // for libR
-    Rzig_tests.root_module.addLibraryPath(.{ .cwd_relative = "/usr/lib64/R/lib/" });
-    Rzig_tests.root_module.addSystemIncludePath(.{ .cwd_relative = "/usr/lib64/R/include/" });
-    Rzig_tests.root_module.linkSystemLibrary("R", .{});
+    // Include and Link R (pkg-config dependency)
+    Rzig_tests.linkSystemLibrary2("libR", .{ .use_pkg_config = .force });
 
     const run_Rzig_tests = b.addRunArtifact(Rzig_tests);
     run_Rzig_tests.has_side_effects = true; // tests call child R process
