@@ -91,6 +91,11 @@ export fn testStop2() RObject {
     unreachable;
 }
 
+export fn testWarning() RObject {
+    rzig.errors.warning("Test warning message {d}\n", .{1234});
+    return r_null.*;
+}
+
 // export fn testAsVector(
 //     logical: RObject,
 //     integer: RObject,

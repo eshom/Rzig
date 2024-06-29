@@ -92,6 +92,44 @@ test "stop2" {
 }
 
 /// Prints warning to R managed stderr
-pub fn warning(msg: []const u8) void {
-    r.Rf_warning("%.*s\n", msg.len, msg.ptr);
+pub fn warning(comptime format: []const u8, args: anytype) void {
+    r.R_CheckStack2(ERR_BUF_SIZE);
+    var buf: [ERR_BUF_SIZE]u8 = undefined;
+
+    const msg = fmt.bufPrint(&buf, format, args) catch |err| blk: {
+        const err_msg = @errorName(err);
+        r.Rf_warning("Format string too long. Truncating message. Caught: %.*s\n", err_msg.len, err_msg.ptr);
+        const minlen = @min(format.len, ERR_BUF_SIZE);
+        break :blk format[0..minlen];
+    };
+
+    r.Rf_warning("%.*s", msg.len, msg.ptr);
+}
+
+test "warning" {
+    const code =
+        \\dyn.load('zig-out/tests/lib/libRtests.so')
+        \\.Call('testWarning')
+    ;
+
+    const result = try std.process.Child.run(.{
+        .allocator = testing.allocator,
+        .argv = &.{
+            "Rscript",
+            "--vanilla",
+            "-e",
+            code,
+        },
+    });
+
+    defer testing.allocator.free(result.stdout);
+    defer testing.allocator.free(result.stderr);
+
+    const expected =
+        \\Warning message:
+        \\Test warning message 1234 
+        \\
+    ;
+
+    try testing.expectEqualSlices(u8, expected, result.stderr);
 }
