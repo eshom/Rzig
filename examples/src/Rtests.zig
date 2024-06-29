@@ -96,6 +96,13 @@ export fn testWarning() Robject {
     return r_null.*;
 }
 
+export fn testWarning2() Robject {
+    const msg = "." ** 1000;
+    const msg2 = "A" ** 1000;
+    rzig.errors.warning("{s}{s}\n", .{ msg, msg2 });
+    return r_null.*;
+}
+
 // export fn testAsVector(
 //     logical: Robject,
 //     integer: Robject,

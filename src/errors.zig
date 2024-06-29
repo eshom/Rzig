@@ -27,7 +27,7 @@ pub fn stop(comptime format: []const u8, args: anytype) void {
 
     const msg = fmt.bufPrint(&buf, format, args) catch |err| {
         const err_msg = @errorName(err);
-        r.Rf_warning("Format string too long. Caught: %.*s\n", err_msg.len, err_msg.ptr);
+        r.Rf_warning("Message too long. Caught: %.*s\n", err_msg.len, err_msg.ptr);
         r.Rf_error("%.*s", format.len, format.ptr);
         unreachable;
     };
@@ -83,7 +83,7 @@ test "stop2" {
     defer testing.allocator.free(result.stderr);
 
     const error_message = "Error: " ++ "." ** (ERR_BUF_SIZE - 7) ++ "\n";
-    const warning_message = "In addition: Warning message:\nFormat string too long. Caught: " ++ "NoSpaceLeft \n" ++
+    const warning_message = "In addition: Warning message:\nMessage too long. Caught: " ++ "NoSpaceLeft \n" ++
         \\Execution halted
         \\
     ;
@@ -98,9 +98,9 @@ pub fn warning(comptime format: []const u8, args: anytype) void {
 
     const msg = fmt.bufPrint(&buf, format, args) catch |err| blk: {
         const err_msg = @errorName(err);
-        r.Rf_warning("Format string too long. Truncating message. Caught: %.*s\n", err_msg.len, err_msg.ptr);
+        r.Rf_warning("Message too long. Skipping format arguments. Caught: %.*s\n", err_msg.len, err_msg.ptr);
         const minlen = @min(format.len, ERR_BUF_SIZE);
-        break :blk format[0..minlen];
+        break :blk "Format: " ++ format[0..minlen];
     };
 
     r.Rf_warning("%.*s", msg.len, msg.ptr);
@@ -130,6 +130,33 @@ test "warning" {
         \\Test warning message 1234 
         \\
     ;
+
+    try testing.expectEqualSlices(u8, expected, result.stderr);
+}
+
+test "warning2" {
+    const code =
+        \\dyn.load('zig-out/tests/lib/libRtests.so')
+        \\.Call('testWarning2')
+    ;
+
+    const result = try std.process.Child.run(.{
+        .allocator = testing.allocator,
+        .argv = &.{
+            "Rscript",
+            "--vanilla",
+            "-e",
+            code,
+        },
+    });
+
+    defer testing.allocator.free(result.stdout);
+    defer testing.allocator.free(result.stderr);
+
+    const warning1 = "Warning messages:\n1: Message too long. Skipping format arguments. Caught: " ++ "NoSpaceLeft \n";
+    const warning2 = "2: Format: {s}{s}";
+
+    const expected = warning1 ++ warning2 ++ " \n";
 
     try testing.expectEqualSlices(u8, expected, result.stderr);
 }
