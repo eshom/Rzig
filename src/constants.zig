@@ -1,7 +1,7 @@
 //! R constants
 
 const r = @import("r.zig");
-const RObject = @import("types.zig").RObject;
+const Robject = @import("types.zig").Robject;
 
 /// Points to Rtype.NULL value (NILSXP)
-pub const r_null: *RObject = &r.R_NilValue;
+pub const r_null: *Robject = &r.R_NilValue;

@@ -1,7 +1,7 @@
 //! GC related
 
 const r = @import("r.zig");
-const RObject = @import("Rzig.zig").RObject;
+const Robject = @import("Rzig.zig").Robject;
 const RAssert = @import("errors.zig").RAssert;
 const math = @import("std").math;
 
@@ -21,11 +21,11 @@ pub const ProtectStack = struct {
         return .{};
     }
 
-    /// Pass an RObject, and get a GC protected RObject.
+    /// Pass an Robject, and get a GC protected Robject.
     /// Caller responsible to unprotect.
     ///
     /// Asserts protect stack will not overflow (default protect stack size 10000).
-    pub fn protect(self: *ProtectStack, obj: RObject) ProtectError!RObject {
+    pub fn protect(self: *ProtectStack, obj: Robject) ProtectError!Robject {
         if (self.len >= protect_stack_size) {
             return ProtectError.StackOverflow;
         }
@@ -46,12 +46,12 @@ pub const ProtectStack = struct {
         r.Rf_unprotect(@intCast(n));
     }
 
-    /// Protect an RObject from GC.
+    /// Protect an Robject from GC.
     /// Returns index of the object in the internal protect stack.
     /// Index is used used with `ProtectIndex.reprotect`.
     ///
     /// Asserts protect stack will not overflow (default protect stack size 10000).
-    pub fn protectWithIndex(self: *ProtectStack, obj: RObject) ProtectError!usize {
+    pub fn protectWithIndex(self: *ProtectStack, obj: Robject) ProtectError!usize {
         if (self.len >= protect_stack_size) {
             return ProtectError.StackOverflow;
         }
@@ -65,11 +65,11 @@ pub const ProtectStack = struct {
         return @intCast(idx);
     }
 
-    /// Swap protection of new Robject with RObject in provided protect stack index
+    /// Swap protection of new Robject with Robject in provided protect stack index
     ///
     /// Provided index is bounds checked.
     /// Object position in protect stack does not change by this call.
-    pub fn reprotect(self: *ProtectStack, obj: RObject, protect_index: usize) ProtectError!void {
+    pub fn reprotect(self: *ProtectStack, obj: Robject, protect_index: usize) ProtectError!void {
         if (protect_index > self.len) {
             ProtectError.IndexOutOfBounds;
         }

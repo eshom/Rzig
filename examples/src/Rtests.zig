@@ -1,32 +1,32 @@
 const std = @import("std");
 const rzig = @import("Rzig");
 
-const RObject = rzig.RObject;
+const Robject = rzig.Robject;
 const r_null = rzig.r_null;
 
 fn errorString(err: anyerror) [*:0]const u8 {
     return @errorName(err);
 }
 
-export fn testHello() RObject {
+export fn testHello() Robject {
     const writer = rzig.io.RStdoutWriter().writer();
     writer.print("Hello, World!\n", .{}) catch unreachable;
     return r_null.*;
 }
 
-export fn testHelloCFormat() RObject {
+export fn testHelloCFormat() Robject {
     const writer = rzig.io.RStdoutWriter().writer();
     writer.print("%d%d%sHello, World!%d%d%s\n", .{}) catch unreachable;
     return r_null.*;
 }
 
-export fn testHelloStderr() RObject {
+export fn testHelloStderr() Robject {
     const writer = rzig.io.RStderrWriter().writer();
     writer.print("Hello, Error!\n", .{}) catch unreachable;
     return r_null.*;
 }
 
-export fn testAllocPrint() RObject {
+export fn testAllocPrint() Robject {
     const allocator = rzig.heap.r_allocator;
     const writer = rzig.io.RStdoutWriter().writer();
 
@@ -45,7 +45,7 @@ export fn testAllocPrint() RObject {
     return r_null.*;
 }
 
-export fn testAllocResizePrint() RObject {
+export fn testAllocResizePrint() Robject {
     const allocator = rzig.heap.r_allocator;
     const writer = rzig.io.RStdoutWriter().writer();
 
@@ -79,31 +79,31 @@ export fn testAllocResizePrint() RObject {
     return r_null.*;
 }
 
-export fn testStop() RObject {
+export fn testStop() Robject {
     rzig.errors.stop("Test error message\n", .{});
 
     unreachable;
 }
 
-export fn testStop2() RObject {
+export fn testStop2() Robject {
     rzig.errors.stop("." ** 1000 ++ "\n", .{});
 
     unreachable;
 }
 
-export fn testWarning() RObject {
+export fn testWarning() Robject {
     rzig.errors.warning("Test warning message {d}\n", .{1234});
     return r_null.*;
 }
 
 // export fn testAsVector(
-//     logical: RObject,
-//     integer: RObject,
-//     numeric: RObject,
-//     character: RObject,
-//     // complex: RObject,
-//     list: RObject,
-// ) RObject {
+//     logical: Robject,
+//     integer: Robject,
+//     numeric: Robject,
+//     character: Robject,
+//     // complex: Robject,
+//     list: Robject,
+// ) Robject {
 //     const raw_integer = rzig.asVector(.RawVector, logical) catch unreachable;
 //     const raw_logical = rzig.asVector(.RawVector, integer) catch unreachable;
 //     const raw_numeric = rzig.asVector(.RawVector, numeric) catch unreachable;

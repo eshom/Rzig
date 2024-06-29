@@ -7,7 +7,7 @@ const RNull = constants.RNull;
 
 /// General purpose R object (SEXP).
 /// Must use R API functions to access values and coerce to other types.
-pub const RObject = ?*r.struct_SEXPREC;
+pub const Robject = ?*r.struct_SEXPREC;
 
 pub const RBoolean = enum(c_uint) {
     False = 0,
@@ -96,7 +96,7 @@ pub const CoercionError = error{
 };
 
 /// Returns `.True` for any atomic vector type, lists, expressions
-pub fn isVector(obj: RObject) RBoolean {
+pub fn isVector(obj: Robject) RBoolean {
     if (r.Rf_isVector(obj) == 1) {
         return .True;
     }
@@ -104,7 +104,7 @@ pub fn isVector(obj: RObject) RBoolean {
 }
 
 /// Returns `.True` for any atomic vector type
-pub fn isVectorAtomic(obj: RObject) RBoolean {
+pub fn isVectorAtomic(obj: Robject) RBoolean {
     if (r.Rf_isVectorAtomic(obj) == 1) {
         return .True;
     }
@@ -112,7 +112,7 @@ pub fn isVectorAtomic(obj: RObject) RBoolean {
 }
 
 /// Returns `.True` for R list or R expression
-pub fn isVectorList(obj: RObject) RBoolean {
+pub fn isVectorList(obj: Robject) RBoolean {
     if (r.Rf_isVectorList(obj) == 1) {
         return .True;
     }
@@ -120,35 +120,35 @@ pub fn isVectorList(obj: RObject) RBoolean {
 }
 
 /// Returns `.True` if matrix has a length-2 `dim` attribute
-pub fn isMatrix(obj: RObject) RBoolean {
+pub fn isMatrix(obj: Robject) RBoolean {
     if (r.Rf_isMatrix(obj) == 1) {
         return .True;
     }
     return .False;
 }
 
-pub fn isPairList(obj: RObject) RBoolean {
+pub fn isPairList(obj: Robject) RBoolean {
     if (r.Rf_isPairList(obj) == 1) {
         return .True;
     }
     return .False;
 }
 
-pub fn isPrimitive(obj: RObject) RBoolean {
+pub fn isPrimitive(obj: Robject) RBoolean {
     if (r.Rf_isPrimitive(obj) == 1) {
         return .True;
     }
     return .False;
 }
 
-pub fn isTs(obj: RObject) RBoolean {
+pub fn isTs(obj: Robject) RBoolean {
     if (r.Rf_isTs(obj) == 1) {
         return .True;
     }
     return .False;
 }
 
-pub fn isNumeric(obj: RObject) RBoolean {
+pub fn isNumeric(obj: Robject) RBoolean {
     if (r.Rf_isNumeric(obj) == 1) {
         return .True;
     }
@@ -156,63 +156,63 @@ pub fn isNumeric(obj: RObject) RBoolean {
 }
 
 /// R matrix is also an R array
-pub fn isArray(obj: RObject) RBoolean {
+pub fn isArray(obj: Robject) RBoolean {
     if (r.Rf_isArray(obj) == 1) {
         return .True;
     }
     return .False;
 }
 
-pub fn isFactor(obj: RObject) RBoolean {
+pub fn isFactor(obj: Robject) RBoolean {
     if (r.Rf_isFactor(obj) == 1) {
         return .True;
     }
     return .False;
 }
 
-pub fn isObject(obj: RObject) RBoolean {
+pub fn isObject(obj: Robject) RBoolean {
     if (r.Rf_isObject(obj) == 1) {
         return .True;
     }
     return .False;
 }
 
-pub fn isFunction(obj: RObject) RBoolean {
+pub fn isFunction(obj: Robject) RBoolean {
     if (r.Rf_isFunction(obj) == 1) {
         return .True;
     }
     return .False;
 }
 
-pub fn isLanguage(obj: RObject) RBoolean {
+pub fn isLanguage(obj: Robject) RBoolean {
     if (r.Rf_isLanguage(obj) == 1) {
         return .True;
     }
     return .False;
 }
 
-pub fn isNewList(obj: RObject) RBoolean {
+pub fn isNewList(obj: Robject) RBoolean {
     if (r.Rf_isNewList(obj) == 1) {
         return .True;
     }
     return .False;
 }
 
-pub fn isList(obj: RObject) RBoolean {
+pub fn isList(obj: Robject) RBoolean {
     if (r.Rf_isList(obj) == 1) {
         return .True;
     }
     return .False;
 }
 
-pub fn isOrdered(obj: RObject) RBoolean {
+pub fn isOrdered(obj: Robject) RBoolean {
     if (r.Rf_isOrdered(obj) == 1) {
         return .True;
     }
     return .False;
 }
 
-pub fn isUnOrdered(obj: RObject) RBoolean {
+pub fn isUnOrdered(obj: Robject) RBoolean {
     if (r.Rf_isUnordered(obj) == 1) {
         return .True;
     }
@@ -222,13 +222,13 @@ pub fn isUnOrdered(obj: RObject) RBoolean {
 //TODO: write this test
 test "R type checks" {}
 
-/// Coerces `RObject` to a specific `RType`.
-/// Returns `RObject` which points to requested type.
+/// Coerces `Robject` to a specific `RType`.
+/// Returns `Robject` which points to requested type.
 /// If coercsion is not supported, returns `UnsupportedType`.
 ///
 /// Return value must be protected from GC by caller.
-pub fn asVector(to: RType, from: RObject) CoercionError!RObject {
-    const out: RObject = switch (to) {
+pub fn asVector(to: RType, from: Robject) CoercionError!Robject {
+    const out: Robject = switch (to) {
         .LogicalVector,
         .IntegerVector,
         .NumericVector,
@@ -259,7 +259,7 @@ test "asVector" {
 ///
 /// `from` must be a vector otherwise `NotAVector` error is returned.
 /// Vectors with length greater than 1 return only their first element.
-pub fn asPrimitive(T: type, from: RObject) CoercionError!T {
+pub fn asPrimitive(T: type, from: Robject) CoercionError!T {
     const is_vec: RBoolean = isVector(from);
     if (is_vec == .False) {
         return CoercionError.NotAVector;
@@ -278,7 +278,7 @@ pub fn asPrimitive(T: type, from: RObject) CoercionError!T {
 /// Coerces primitive type to R atomic vector.
 ///
 /// Returns R NULL if coercsion is not supported.
-pub fn asScalarVector(from: anytype) RObject {
+pub fn asScalarVector(from: anytype) Robject {
     const T = @TypeOf(from);
 
     const out = switch (T) {
