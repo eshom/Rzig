@@ -1,6 +1,7 @@
 //! R control flow affecting error handling and warnings
 
 const r = @import("r.zig");
+const Robject = @import("types.zig").Robject;
 
 const std = @import("std");
 const fmt = std.fmt;
@@ -8,7 +9,7 @@ const testing = std.testing;
 
 pub const ERR_BUF_SIZE = 1000; // undocumented. Seems like errors are truncated to this value from testing.
 
-pub const stopCall = r.Rf_errorcall;
+// pub const stopCall = r.Rf_errorcall;
 pub const warningCall = r.Rf_warningcall;
 pub const warningCallImmediate = r.Rf_warningcall_immediate;
 
@@ -157,6 +158,53 @@ test "warning2" {
     const warning2 = "2: Format: {s}{s}";
 
     const expected = warning1 ++ warning2 ++ " \n";
+
+    try testing.expectEqualSlices(u8, expected, result.stderr);
+}
+
+/// Prints formatted error message to R managed stderr and returns control flow back to R.
+/// R call information is included in the error message.
+/// If call = r_null.*, the effect is the same as stop().
+pub fn stopcall(call: Robject, comptime format: []const u8, args: anytype) void {
+    r.R_CheckStack2(ERR_BUF_SIZE);
+    var buf: [ERR_BUF_SIZE]u8 = undefined;
+
+    const msg = fmt.bufPrint(&buf, format, args) catch |err| {
+        const err_msg = @errorName(err);
+        r.Rf_warning("Message too long. Caught: %.*s\n", err_msg.len, err_msg.ptr);
+        r.Rf_errorcall(call, "%.*s", format.len, format.ptr);
+        unreachable;
+    };
+
+    r.Rf_errorcall(call, "%.*s", msg.len, msg.ptr);
+}
+
+test "stopcall" {
+    const code =
+        \\dyn.load('zig-out/tests/lib/libRtests.so')
+        \\f <- function(x = 1:10) { cumsum(x) }
+        \\.Call('testStopCall', f)
+    ;
+
+    const result = try std.process.Child.run(.{
+        .allocator = testing.allocator,
+        .argv = &.{
+            "Rscript",
+            "--vanilla",
+            "-e",
+            code,
+        },
+    });
+
+    defer testing.allocator.free(result.stdout);
+    defer testing.allocator.free(result.stderr);
+
+    const expected =
+        \\Error in function (x = 1:10)  : Test error message 1234
+        \\Calls: .Call
+        \\Execution halted
+        \\
+    ;
 
     try testing.expectEqualSlices(u8, expected, result.stderr);
 }

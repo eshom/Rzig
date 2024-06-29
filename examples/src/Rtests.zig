@@ -103,6 +103,15 @@ export fn testWarning2() Robject {
     return r_null.*;
 }
 
+export fn testStopCall(callback: Robject) Robject {
+    const msg = "Test error message";
+    const num = 1234;
+
+    rzig.errors.stopcall(callback, "{s} {d}\n", .{ msg, num });
+
+    unreachable;
+}
+
 // export fn testAsVector(
 //     logical: Robject,
 //     integer: Robject,
