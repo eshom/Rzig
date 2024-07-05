@@ -18,9 +18,22 @@ pub fn build(b: *std.Build) void {
     });
 
     //TODO: figure out paths for other OS and linux distros
-    Rzig.addLibraryPath(.{ .cwd_relative = "/usr/lib64/R/lib/" });
-    Rzig.addSystemIncludePath(.{ .cwd_relative = "/usr/lib64/R/include/" });
-    Rzig.linkSystemLibrary("R", .{});
+
+    Rzig.linkSystemLibrary("libR", .{ .use_pkg_config = .force });
+
+    // LSP build check
+    const Rzig_check = b.addStaticLibrary(.{
+        .name = "Rzig_check",
+        .root_source_file = b.path("check.zig"),
+        .target = target,
+        .optimize = optimize,
+        .link_libc = true,
+    });
+
+    Rzig_check.linkSystemLibrary2("libR", .{ .use_pkg_config = .force });
+    Rzig_check.root_module.addImport("Rzig", Rzig);
+    const check = b.step("check", "Check if Rzig compiles");
+    check.dependOn(&Rzig_check.step);
 
     // R lib compiled by zig for tests
     const Rtests = b.addSharedLibrary(.{
