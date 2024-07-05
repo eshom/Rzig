@@ -128,6 +128,17 @@ export fn testWarningCallImmediate(callback: Robject) Robject {
     return r_null.*;
 }
 
+export fn testShowMessage() Robject {
+    const msg =
+        \\Important message:
+        \\This is a test.
+        \\
+    ;
+
+    rzig.io.showMessage("{s}", .{msg});
+    return r_null.*;
+}
+
 // export fn testAsVector(
 //     logical: Robject,
 //     integer: Robject,

@@ -18,6 +18,8 @@ pub fn RAssert(ok: bool, msg: []const u8) void {
 }
 
 /// Prints formatted error message to R managed stderr and returns control flow back to R.
+///
+/// It's safe and recommended to use `unreachable` after this call.
 pub fn stop(comptime format: []const u8, args: anytype) void {
     r.R_CheckStack2(ERR_BUF_SIZE);
     var buf: [ERR_BUF_SIZE]u8 = undefined;
@@ -30,6 +32,7 @@ pub fn stop(comptime format: []const u8, args: anytype) void {
     };
 
     r.Rf_error("%.*s", msg.len, msg.ptr);
+    unreachable;
 }
 
 test "stop" {
@@ -161,6 +164,8 @@ test "warning2" {
 /// Prints formatted error message to R managed stderr and returns control flow back to R.
 /// R call information is included in the error message.
 /// If call = r_null.*, the effect is the same as stop().
+///
+/// It's safe and recommended to use `unreachable` after this call.
 pub fn stopCall(call: Robject, comptime format: []const u8, args: anytype) void {
     r.R_CheckStack2(ERR_BUF_SIZE);
     var buf: [ERR_BUF_SIZE]u8 = undefined;
@@ -174,6 +179,7 @@ pub fn stopCall(call: Robject, comptime format: []const u8, args: anytype) void 
     };
 
     r.Rf_errorcall(call, "%.*s", msg.len, msg.ptr);
+    unreachable;
 }
 
 test "stopCall" {

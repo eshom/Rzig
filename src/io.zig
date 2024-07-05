@@ -4,6 +4,11 @@ const std = @import("std");
 const io = std.io;
 const math = std.math;
 const testing = std.testing;
+const fmt = std.fmt;
+
+const errors = @import("errors.zig");
+
+const BUFFER_SIZE = r.BUFSIZ;
 
 const PrintError = error{
     LengthTooBig,
@@ -112,4 +117,45 @@ test "print to stdout and stderr" {
         std.debug.print("stdout:\n{s}\n", .{result.stdout});
         return err;
     };
+}
+
+///This should display the message, which may have multiple lines: it should be brought to the user’s attention immediately.
+///Prints to R managed stderr.
+pub fn showMessage(comptime format: []const u8, args: anytype) void {
+    var buf: [BUFFER_SIZE]u8 = undefined;
+    const msg = fmt.bufPrintZ(&buf, format, args) catch |err| blk: {
+        errors.warning("Caught {!}. Formatted message too long. Using unformatted message, possibly truncated.\n", .{err});
+        const minlen = @min(format.len, BUFFER_SIZE);
+        break :blk format[0..minlen];
+    };
+    r.R_ShowMessage(msg.ptr); // Guaranteed to be null terminated by bufPrintZ()
+}
+
+test "showMessage" {
+    const code =
+        \\dyn.load('zig-out/tests/lib/libRtests.so')
+        \\.Call('testShowMessage')
+    ;
+
+    const result = try std.process.Child.run(.{
+        .allocator = testing.allocator,
+        .argv = &.{
+            "Rscript",
+            "--vanilla",
+            "-e",
+            code,
+        },
+    });
+
+    defer testing.allocator.free(result.stdout);
+    defer testing.allocator.free(result.stderr);
+
+    const expected =
+        \\Important message:
+        \\This is a test.
+        \\
+        \\
+    ;
+
+    try testing.expectEqualSlices(u8, expected, result.stderr);
 }
