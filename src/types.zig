@@ -236,7 +236,7 @@ pub fn asVector(to: RType, from: Robject) CoercionError!Robject {
         .ComplexVector,
         .List,
         .RawVector,
-        => r.Rf_coerceVector(from, to),
+        => r.Rf_coerceVector(from, @intCast(@intFromEnum(to))),
         else => return CoercionError.UnsupportedType,
     };
 

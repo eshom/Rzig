@@ -21,7 +21,9 @@ pub const io = @import("io.zig");
 pub const errors = @import("errors.zig");
 
 test {
-    _ = @import("allocator.zig");
-    _ = @import("io.zig");
-    _ = @import("errors.zig");
+    // @setEvalBranchQuota(10_000);
+    testing.refAllDecls(@This());
+    // _ = @import("allocator.zig");
+    // _ = @import("io.zig");
+    // _ = @import("errors.zig");
 }

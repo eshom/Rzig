@@ -21,20 +21,6 @@ pub fn build(b: *std.Build) void {
 
     Rzig.linkSystemLibrary("libR", .{ .use_pkg_config = .force });
 
-    // LSP build check
-    const Rzig_check = b.addStaticLibrary(.{
-        .name = "Rzig_check",
-        .root_source_file = b.path("check.zig"),
-        .target = target,
-        .optimize = optimize,
-        .link_libc = true,
-    });
-
-    Rzig_check.linkSystemLibrary2("libR", .{ .use_pkg_config = .force });
-    Rzig_check.root_module.addImport("Rzig", Rzig);
-    const check = b.step("check", "Check if Rzig compiles");
-    check.dependOn(&Rzig_check.step);
-
     // R lib compiled by zig for tests
     const Rtests = b.addSharedLibrary(.{
         .name = "Rtests",
@@ -72,4 +58,19 @@ pub fn build(b: *std.Build) void {
     const test_step = b.step("test", "Run unit tests");
     test_step.dependOn(&Rtests_install.step);
     test_step.dependOn(&run_Rzig_tests.step);
+
+    // LSP build check
+    const Rzig_check = b.addStaticLibrary(.{
+        .name = "Rzig_check",
+        .root_source_file = b.path("src/Rzig.zig"),
+        .target = target,
+        .optimize = optimize,
+        .link_libc = true,
+    });
+
+    Rzig_check.linkSystemLibrary2("libR", .{ .use_pkg_config = .force });
+    const check = b.step("check", "Check if Rzig compiles");
+    check.dependOn(&Rzig_check.step);
+    check.dependOn(&Rzig_tests.step);
+    check.dependOn(&Rtests.step);
 }
