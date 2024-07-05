@@ -9,10 +9,6 @@ const testing = std.testing;
 
 pub const ERR_BUF_SIZE = 1000; // undocumented. Seems like errors are truncated to this value from testing.
 
-// pub const stopCall = r.Rf_errorcall;
-pub const warningCall = r.Rf_warningcall;
-pub const warningCallImmediate = r.Rf_warningcall_immediate;
-
 /// Asserts expression. If false prints error to R managed stderr and returns
 /// control flow back to R.
 pub fn RAssert(ok: bool, msg: []const u8) void {
@@ -165,11 +161,12 @@ test "warning2" {
 /// Prints formatted error message to R managed stderr and returns control flow back to R.
 /// R call information is included in the error message.
 /// If call = r_null.*, the effect is the same as stop().
-pub fn stopcall(call: Robject, comptime format: []const u8, args: anytype) void {
+pub fn stopCall(call: Robject, comptime format: []const u8, args: anytype) void {
     r.R_CheckStack2(ERR_BUF_SIZE);
     var buf: [ERR_BUF_SIZE]u8 = undefined;
 
     const msg = fmt.bufPrint(&buf, format, args) catch |err| {
+        //TODO: Add test for this branch
         const err_msg = @errorName(err);
         r.Rf_warning("Message too long. Caught: %.*s\n", err_msg.len, err_msg.ptr);
         r.Rf_errorcall(call, "%.*s", format.len, format.ptr);
@@ -179,7 +176,7 @@ pub fn stopcall(call: Robject, comptime format: []const u8, args: anytype) void 
     r.Rf_errorcall(call, "%.*s", msg.len, msg.ptr);
 }
 
-test "stopcall" {
+test "stopCall" {
     const code =
         \\dyn.load('zig-out/tests/lib/libRtests.so')
         \\f <- function(x = 1:10) { cumsum(x) }
@@ -203,6 +200,103 @@ test "stopcall" {
         \\Error in function (x = 1:10)  : Test error message 1234
         \\Calls: .Call
         \\Execution halted
+        \\
+    ;
+
+    try testing.expectEqualSlices(u8, expected, result.stderr);
+}
+
+/// Prints formatted error message to R managed stderr.
+/// R call information is included in the error message.
+/// If call = r_null.*, the effect is the same as warning().
+pub fn warningCall(call: Robject, comptime format: []const u8, args: anytype) void {
+    r.R_CheckStack2(ERR_BUF_SIZE);
+    var buf: [ERR_BUF_SIZE]u8 = undefined;
+
+    const msg = fmt.bufPrint(&buf, format, args) catch |err| blk: {
+        //TODO: Add test for this branch
+        const err_msg = @errorName(err);
+        r.Rf_warning("Message too long. Caught: %.*s\n", err_msg.len, err_msg.ptr);
+        const minlen = @min(format.len, ERR_BUF_SIZE);
+        break :blk "Format: " ++ format[0..minlen];
+    };
+
+    r.Rf_warningcall(call, "%.*s", msg.len, msg.ptr);
+}
+
+test "warningCall" {
+    const code =
+        \\dyn.load('zig-out/tests/lib/libRtests.so')
+        \\f <- function(x = 1:10) { cumsum(x) }
+        \\.Call('testWarningCall', f)
+    ;
+
+    const result = try std.process.Child.run(.{
+        .allocator = testing.allocator,
+        .argv = &.{
+            "Rscript",
+            "--vanilla",
+            "-e",
+            code,
+        },
+    });
+
+    defer testing.allocator.free(result.stdout);
+    defer testing.allocator.free(result.stderr);
+
+    const expected =
+        \\Warning message:
+        \\In function (x = 1:10)  : Test error message 4321
+        \\
+        \\
+    ;
+
+    try testing.expectEqualSlices(u8, expected, result.stderr);
+}
+
+/// Prints formatted error message to R managed stderr.
+/// R call information is included in the error message.
+/// If call = r_null.*, the effect is the same as warning().
+///
+/// Compared to warningCall() this version does not include "Warning message(s) header"
+pub fn warningCallImmediate(call: Robject, comptime format: []const u8, args: anytype) void {
+    r.R_CheckStack2(ERR_BUF_SIZE);
+    var buf: [ERR_BUF_SIZE]u8 = undefined;
+
+    const msg = fmt.bufPrint(&buf, format, args) catch |err| blk: {
+        //TODO: Add test for this branch
+        const err_msg = @errorName(err);
+        r.Rf_warning("Message too long. Caught: %.*s\n", err_msg.len, err_msg.ptr);
+        const minlen = @min(format.len, ERR_BUF_SIZE);
+        break :blk "Format: " ++ format[0..minlen];
+    };
+
+    r.Rf_warningcall_immediate(call, "%.*s", msg.len, msg.ptr);
+}
+
+test "warningCallImmediate" {
+    const code =
+        \\dyn.load('zig-out/tests/lib/libRtests.so')
+        \\f <- function(x = 1:10) { cumsum(x) }
+        \\.Call('testWarningCallImmediate', f)
+    ;
+
+    const result = try std.process.Child.run(.{
+        .allocator = testing.allocator,
+        .argv = &.{
+            "Rscript",
+            "--vanilla",
+            "-e",
+            code,
+        },
+    });
+
+    defer testing.allocator.free(result.stdout);
+    defer testing.allocator.free(result.stderr);
+
+    const expected =
+        \\Warning in function (x = 1:10)  : Test error message 654321
+        \\
         \\
     ;
 

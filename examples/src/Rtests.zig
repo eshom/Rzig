@@ -107,9 +107,25 @@ export fn testStopCall(callback: Robject) Robject {
     const msg = "Test error message";
     const num = 1234;
 
-    rzig.errors.stopcall(callback, "{s} {d}\n", .{ msg, num });
+    rzig.errors.stopCall(callback, "{s} {d}\n", .{ msg, num });
 
     unreachable;
+}
+
+export fn testWarningCall(callback: Robject) Robject {
+    const msg = "Test error message";
+    const num = 4321;
+
+    rzig.errors.warningCall(callback, "{s} {d}\n", .{ msg, num });
+    return r_null.*;
+}
+
+export fn testWarningCallImmediate(callback: Robject) Robject {
+    const msg = "Test error message";
+    const num = 654321;
+
+    rzig.errors.warningCallImmediate(callback, "{s} {d}\n", .{ msg, num });
+    return r_null.*;
 }
 
 // export fn testAsVector(
