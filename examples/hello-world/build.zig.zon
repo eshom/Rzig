@@ -4,7 +4,7 @@
     .dependencies = .{
         .Rzig = .{
             .url = "https://github.com/eshom/Rzig/archive/refs/heads/master.tar.gz",
-            .hash = "1220933de37380fa290dd1879d64c11e375be61cbb8b2c3d84a76e54a247cbc2d368",
+            .hash = "122003646b46de1ab1d7266a1f236b80c97b75d89b90774837a24bd35e2b7c2c11c7",
         },
     },
     .paths = .{

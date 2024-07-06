@@ -4,6 +4,6 @@ const Robject = r.Robject;
 
 export fn helloWorld() Robject {
     const stdout = r.io.RStdoutWriter().writer();
-    try stdout.print("Hello, World!", .{});
+    stdout.print("Hello, World!", .{}) catch r.errors.stop("Failed to print!", .{});
     return r.r_null.*;
 }
