@@ -52,9 +52,7 @@ pub fn build(b: *std.Build) !void {
 
     // Zig public module, to be used by the package manager
     const Rzig = b.addModule("Rzig", .{
-        .root_source_file = .{
-            .cwd_relative = "src/Rzig.zig",
-        },
+        .root_source_file = b.path("src/Rzig.zig"),
         .target = target,
         .optimize = optimize,
         .link_libc = true,
@@ -63,9 +61,7 @@ pub fn build(b: *std.Build) !void {
 
     // Zig private module, used by tests
     const _Rzig = b.createModule(.{
-        .root_source_file = .{
-            .cwd_relative = "src/Rzig.zig",
-        },
+        .root_source_file = b.path("src/Rzig.zig"),
         .target = target,
         .optimize = optimize,
         .link_libc = true,

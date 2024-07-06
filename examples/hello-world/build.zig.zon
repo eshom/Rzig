@@ -2,9 +2,9 @@
     .name = "hello-world",
     .version = "0.0.0",
     .dependencies = .{
-        .rzig = .{
+        .Rzig = .{
             .url = "https://github.com/eshom/Rzig/archive/refs/heads/master.tar.gz",
-            .hash = "1220a425d4ed424c4d34176ec852ad752c4694434a2d7bdc2ee9503d5ae3d981dcbb",
+            .hash = "1220933de37380fa290dd1879d64c11e375be61cbb8b2c3d84a76e54a247cbc2d368",
         },
     },
     .paths = .{

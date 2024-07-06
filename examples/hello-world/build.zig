@@ -4,7 +4,7 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    const rzig = b.dependency("rzig", .{
+    const Rzig = b.dependency("Rzig", .{
         .target = target,
         .optimize = optimize,
     });
@@ -19,7 +19,7 @@ pub fn build(b: *std.Build) void {
     });
 
     hello.linkSystemLibrary2("libR", .{ .use_pkg_config = .force });
-    hello.root_module.addImport("rzig", rzig.module("rzig"));
+    hello.root_module.addImport("Rzig", Rzig.module("Rzig"));
 
     b.installArtifact(hello);
 }
