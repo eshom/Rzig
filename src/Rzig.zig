@@ -17,13 +17,13 @@ pub const internal_R_api = r;
 
 // R memory allocators
 pub const heap = @import("allocator.zig");
+
+// R Input/Output
 pub const io = @import("io.zig");
+
+// R Errors/Warnings
 pub const errors = @import("errors.zig");
 
 test {
-    // @setEvalBranchQuota(10_000);
     testing.refAllDecls(@This());
-    // _ = @import("allocator.zig");
-    // _ = @import("io.zig");
-    // _ = @import("errors.zig");
 }
