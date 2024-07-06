@@ -139,6 +139,10 @@ export fn testShowMessage() Robject {
     return r_null.*;
 }
 
+export fn testPrintValue(expr: Robject, envir: Robject) Robject {
+    return rzig.eval.eval(expr, envir);
+}
+
 // export fn testAsVector(
 //     logical: Robject,
 //     integer: Robject,

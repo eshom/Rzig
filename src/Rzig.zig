@@ -24,6 +24,9 @@ pub const io = @import("io.zig");
 // R Errors/Warnings
 pub const errors = @import("errors.zig");
 
+// Evaluation of R code
+pub const eval = @import("eval.zig");
+
 test {
     testing.refAllDecls(@This());
 }
