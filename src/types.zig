@@ -61,7 +61,7 @@ pub const Rboolean = enum(c_uint) {
 ///25   OBJSXP        objects not of simple type
 ///
 /// More details in https://cran.r-project.org/doc/manuals/R-ints.html#The-_0027data_0027
-pub const RType = enum(c_int) {
+pub const Rtype = enum(c_int) {
     NULL = 0,
     Symbol = 1,
     Pairlist = 2,
@@ -222,12 +222,12 @@ pub fn isUnOrdered(obj: Robject) Rboolean {
 //TODO: write this test
 test "R type checks" {}
 
-/// Coerces `Robject` to a specific `RType`.
+/// Coerces `Robject` to a specific `Rtype`.
 /// Returns `Robject` which points to requested type.
 /// If coercsion is not supported, returns `UnsupportedType`.
 ///
 /// Return value must be protected from GC by caller.
-pub fn asVector(to: RType, from: Robject) CoercionError!Robject {
+pub fn asVector(to: Rtype, from: Robject) CoercionError!Robject {
     const out: Robject = switch (to) {
         .LogicalVector,
         .IntegerVector,
