@@ -3,13 +3,13 @@
 const r = @import("r.zig");
 const constants = @import("constants.zig");
 
-const RNull = constants.RNull;
+const r_null = constants.r_null;
 
 /// General purpose R object (SEXP).
 /// Must use R API functions to access values and coerce to other types.
 pub const Robject = ?*r.struct_SEXPREC;
 
-pub const RBoolean = enum(c_uint) {
+pub const Rboolean = enum(c_uint) {
     False = 0,
     True = 1,
 };
@@ -96,7 +96,7 @@ pub const CoercionError = error{
 };
 
 /// Returns `.True` for any atomic vector type, lists, expressions
-pub fn isVector(obj: Robject) RBoolean {
+pub fn isVector(obj: Robject) Rboolean {
     if (r.Rf_isVector(obj) == 1) {
         return .True;
     }
@@ -104,7 +104,7 @@ pub fn isVector(obj: Robject) RBoolean {
 }
 
 /// Returns `.True` for any atomic vector type
-pub fn isVectorAtomic(obj: Robject) RBoolean {
+pub fn isVectorAtomic(obj: Robject) Rboolean {
     if (r.Rf_isVectorAtomic(obj) == 1) {
         return .True;
     }
@@ -112,7 +112,7 @@ pub fn isVectorAtomic(obj: Robject) RBoolean {
 }
 
 /// Returns `.True` for R list or R expression
-pub fn isVectorList(obj: Robject) RBoolean {
+pub fn isVectorList(obj: Robject) Rboolean {
     if (r.Rf_isVectorList(obj) == 1) {
         return .True;
     }
@@ -120,35 +120,35 @@ pub fn isVectorList(obj: Robject) RBoolean {
 }
 
 /// Returns `.True` if matrix has a length-2 `dim` attribute
-pub fn isMatrix(obj: Robject) RBoolean {
+pub fn isMatrix(obj: Robject) Rboolean {
     if (r.Rf_isMatrix(obj) == 1) {
         return .True;
     }
     return .False;
 }
 
-pub fn isPairList(obj: Robject) RBoolean {
+pub fn isPairList(obj: Robject) Rboolean {
     if (r.Rf_isPairList(obj) == 1) {
         return .True;
     }
     return .False;
 }
 
-pub fn isPrimitive(obj: Robject) RBoolean {
+pub fn isPrimitive(obj: Robject) Rboolean {
     if (r.Rf_isPrimitive(obj) == 1) {
         return .True;
     }
     return .False;
 }
 
-pub fn isTs(obj: Robject) RBoolean {
+pub fn isTs(obj: Robject) Rboolean {
     if (r.Rf_isTs(obj) == 1) {
         return .True;
     }
     return .False;
 }
 
-pub fn isNumeric(obj: Robject) RBoolean {
+pub fn isNumeric(obj: Robject) Rboolean {
     if (r.Rf_isNumeric(obj) == 1) {
         return .True;
     }
@@ -156,63 +156,63 @@ pub fn isNumeric(obj: Robject) RBoolean {
 }
 
 /// R matrix is also an R array
-pub fn isArray(obj: Robject) RBoolean {
+pub fn isArray(obj: Robject) Rboolean {
     if (r.Rf_isArray(obj) == 1) {
         return .True;
     }
     return .False;
 }
 
-pub fn isFactor(obj: Robject) RBoolean {
+pub fn isFactor(obj: Robject) Rboolean {
     if (r.Rf_isFactor(obj) == 1) {
         return .True;
     }
     return .False;
 }
 
-pub fn isObject(obj: Robject) RBoolean {
+pub fn isObject(obj: Robject) Rboolean {
     if (r.Rf_isObject(obj) == 1) {
         return .True;
     }
     return .False;
 }
 
-pub fn isFunction(obj: Robject) RBoolean {
+pub fn isFunction(obj: Robject) Rboolean {
     if (r.Rf_isFunction(obj) == 1) {
         return .True;
     }
     return .False;
 }
 
-pub fn isLanguage(obj: Robject) RBoolean {
+pub fn isLanguage(obj: Robject) Rboolean {
     if (r.Rf_isLanguage(obj) == 1) {
         return .True;
     }
     return .False;
 }
 
-pub fn isNewList(obj: Robject) RBoolean {
+pub fn isNewList(obj: Robject) Rboolean {
     if (r.Rf_isNewList(obj) == 1) {
         return .True;
     }
     return .False;
 }
 
-pub fn isList(obj: Robject) RBoolean {
+pub fn isList(obj: Robject) Rboolean {
     if (r.Rf_isList(obj) == 1) {
         return .True;
     }
     return .False;
 }
 
-pub fn isOrdered(obj: Robject) RBoolean {
+pub fn isOrdered(obj: Robject) Rboolean {
     if (r.Rf_isOrdered(obj) == 1) {
         return .True;
     }
     return .False;
 }
 
-pub fn isUnOrdered(obj: Robject) RBoolean {
+pub fn isUnOrdered(obj: Robject) Rboolean {
     if (r.Rf_isUnordered(obj) == 1) {
         return .True;
     }
@@ -260,7 +260,7 @@ test "asVector" {
 /// `from` must be a vector otherwise `NotAVector` error is returned.
 /// Vectors with length greater than 1 return only their first element.
 pub fn asPrimitive(T: type, from: Robject) CoercionError!T {
-    const is_vec: RBoolean = isVector(from);
+    const is_vec: Rboolean = isVector(from);
     if (is_vec == .False) {
         return CoercionError.NotAVector;
     }
@@ -288,7 +288,7 @@ pub fn asScalarVector(from: anytype) Robject {
             const from_int: c_int = from;
             break :out r.Rf_ScalarInteger(from_int);
         },
-        else => return RNull,
+        else => return r_null,
     };
 
     return out;
