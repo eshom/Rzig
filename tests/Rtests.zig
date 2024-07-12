@@ -143,19 +143,30 @@ export fn testPrintValue(expr: Robject, envir: Robject) Robject {
     return rzig.eval.eval(expr, envir);
 }
 
-// export fn testAsVector(
-//     logical: Robject,
-//     integer: Robject,
-//     numeric: Robject,
-//     character: Robject,
-//     // complex: Robject,
-//     list: Robject,
-// ) Robject {
-//     const raw_integer = rzig.asVector(.RawVector, logical) catch unreachable;
-//     const raw_logical = rzig.asVector(.RawVector, integer) catch unreachable;
-//     const raw_numeric = rzig.asVector(.RawVector, numeric) catch unreachable;
-//     const raw_character = rzig.asVector(.RawVector, character) catch unreachable;
-//     const raw_list = rzig.asVector(.RawVector, list) catch unreachable;
-//
-//     return rzig.rzig.internal_R_api.R_NilValue;
-// }
+export fn testAllocateSomeVectors() Robject {
+    var prot = rzig.gc.ProtectStack.init();
+    defer prot.deinit();
+
+    const list = prot.protect(rzig.vec.allocVector(.List, 3)) catch unreachable;
+    const numeric = prot.protect(rzig.vec.allocVector(.NumericVector, 3)) catch unreachable;
+    const ints = prot.protect(rzig.vec.allocVector(.IntegerVector, 3)) catch unreachable;
+    const logicals = prot.protect(rzig.vec.allocVector(.LogicalVector, 3)) catch unreachable;
+
+    for (rzig.vec.toSlice(f64, numeric) catch unreachable) |*val| {
+        val.* = 0.5;
+    }
+
+    for (rzig.vec.toSlice(i32, ints) catch unreachable) |*val| {
+        val.* = 0;
+    }
+
+    for (rzig.vec.toU32SliceFromLogical(logicals) catch unreachable) |*val| {
+        val.* = 0;
+    }
+
+    rzig.vec.setListObj(list, 0, numeric);
+    rzig.vec.setListObj(list, 1, ints);
+    rzig.vec.setListObj(list, 2, logicals);
+
+    return list;
+}

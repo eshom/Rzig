@@ -1,5 +1,9 @@
 //! R types and coercison functions
 
+const std = @import("std");
+const math = std.math;
+const mem = std.mem;
+
 const r = @import("r.zig");
 const constants = @import("constants.zig");
 
@@ -61,7 +65,7 @@ pub const Rboolean = enum(c_uint) {
 ///25   OBJSXP        objects not of simple type
 ///
 /// More details in https://cran.r-project.org/doc/manuals/R-ints.html#The-_0027data_0027
-pub const Rtype = enum(c_int) {
+pub const Rtype = enum(c_uint) {
     NULL = 0,
     Symbol = 1,
     Pairlist = 2,
@@ -87,12 +91,10 @@ pub const Rtype = enum(c_int) {
     WeakReference = 23,
     RawVector = 24,
     Object = 25, // non-vector
-};
 
-pub const CoercionError = error{
-    UnsupportedType,
-    WrongType,
-    NotAVector,
+    pub fn int(self: Rtype) c_uint {
+        return @intFromEnum(self);
+    }
 };
 
 /// Returns `.True` for any atomic vector type, lists, expressions
@@ -150,6 +152,13 @@ pub fn isTs(obj: Robject) Rboolean {
 
 pub fn isNumeric(obj: Robject) Rboolean {
     if (r.Rf_isNumeric(obj) == 1) {
+        return .True;
+    }
+    return .False;
+}
+
+pub fn isLogical(obj: Robject) Rboolean {
+    if (r.Rf_isLogical(obj) == 1) {
         return .True;
     }
     return .False;
@@ -217,79 +226,4 @@ pub fn isUnOrdered(obj: Robject) Rboolean {
         return .True;
     }
     return .False;
-}
-
-//TODO: write this test
-test "R type checks" {}
-
-/// Coerces `Robject` to a specific `Rtype`.
-/// Returns `Robject` which points to requested type.
-/// If coercsion is not supported, returns `UnsupportedType`.
-///
-/// Return value must be protected from GC by caller.
-pub fn asVector(to: Rtype, from: Robject) CoercionError!Robject {
-    const out: Robject = switch (to) {
-        .LogicalVector,
-        .IntegerVector,
-        .NumericVector,
-        .CharacterVector,
-        .ComplexVector,
-        .List,
-        .RawVector,
-        => r.Rf_coerceVector(from, @intCast(@intFromEnum(to))),
-        else => return CoercionError.UnsupportedType,
-    };
-
-    return out;
-}
-
-test "asVector" {
-    const code =
-        \\
-        \\
-    ;
-    _ = code; // autofix
-}
-
-/// Coerces a vector to a primitive type.
-///
-/// `T` can be one of:
-/// bool, c_int, f64
-/// Otherwise error `UnsupportedType` is returned
-///
-/// `from` must be a vector otherwise `NotAVector` error is returned.
-/// Vectors with length greater than 1 return only their first element.
-pub fn asPrimitive(T: type, from: Robject) CoercionError!T {
-    const is_vec: Rboolean = isVector(from);
-    if (is_vec == .False) {
-        return CoercionError.NotAVector;
-    }
-
-    const out: T = switch (T) {
-        c_int => r.Rf_asInteger(from),
-        bool => @bitCast(@as(u1, @truncate(@as(c_uint, @intCast(r.Rf_asLogical(from)))))),
-        f64 => r.Rf_asReal(from),
-        else => CoercionError.UnsupportedType,
-    };
-
-    return out;
-}
-
-/// Coerces primitive type to R atomic vector.
-///
-/// Returns R NULL if coercsion is not supported.
-pub fn asScalarVector(from: anytype) Robject {
-    const T = @TypeOf(from);
-
-    const out = switch (T) {
-        f64 => r.Rf_ScalarReal(from),
-        bool => r.Rf_ScalarLogical(@intCast(@intFromBool(from))),
-        c_int, i32, comptime_int => out: {
-            const from_int: c_int = from;
-            break :out r.Rf_ScalarInteger(from_int);
-        },
-        else => return r_null,
-    };
-
-    return out;
 }

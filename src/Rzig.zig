@@ -27,6 +27,12 @@ pub const errors = @import("errors.zig");
 // Evaluation of R code
 pub const eval = @import("eval.zig");
 
+// GC protect
+pub const gc = @import("gc.zig");
+
+// R Vector handling
+pub const vec = @import("vectors.zig");
+
 test {
     testing.refAllDecls(@This());
 }
