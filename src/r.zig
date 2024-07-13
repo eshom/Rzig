@@ -6,9 +6,13 @@ const rzig = @import("Rzig.zig");
 //     @cInclude("Rinternals.h");
 // });
 
-// types
+// private types
 const Robject = Sexp;
+const Rboolean = rzig.Rboolean;
+
+// types
 pub const Sexprec = opaque {
+    /// Protect object from R's GC
     pub fn protect(obj: Robject) Robject {
         return rzig.gc.protect_stack.protectSafe(obj) catch |e| {
             rzig.errors.stop("Failed to protect object. Caught {!}", .{e});
@@ -16,13 +20,146 @@ pub const Sexprec = opaque {
         };
     }
 
+    /// Unprotect object from GC. Pops the object at the top of the stack.
+    /// Caller needs to make sure the object is at the top of the stack.
     pub fn unprotect(obj: Robject) void {
         _ = obj;
         rzig.gc.protect_stack.unprotectOnce();
     }
+
+    /// Returns `.True` for any atomic vector type, lists, expressions
+    pub fn isVector(obj: Robject) Rboolean {
+        if (Rf_isVector(obj) == 1) {
+            return .True;
+        }
+        return .False;
+    }
+
+    /// Returns `.True` for any atomic vector type
+    pub fn isVectorAtomic(obj: Robject) Rboolean {
+        if (Rf_isVectorAtomic(obj) == 1) {
+            return .True;
+        }
+        return .False;
+    }
+
+    /// Returns `.True` for R list or R expression
+    pub fn isVectorList(obj: Robject) Rboolean {
+        if (Rf_isVectorList(obj) == 1) {
+            return .True;
+        }
+        return .False;
+    }
+
+    /// Returns `.True` if matrix has a length-2 `dim` attribute
+    pub fn isMatrix(obj: Robject) Rboolean {
+        if (Rf_isMatrix(obj) == 1) {
+            return .True;
+        }
+        return .False;
+    }
+
+    pub fn isPairList(obj: Robject) Rboolean {
+        if (Rf_isPairList(obj) == 1) {
+            return .True;
+        }
+        return .False;
+    }
+
+    pub fn isPrimitive(obj: Robject) Rboolean {
+        if (Rf_isPrimitive(obj) == 1) {
+            return .True;
+        }
+        return .False;
+    }
+
+    pub fn isTs(obj: Robject) Rboolean {
+        if (Rf_isTs(obj) == 1) {
+            return .True;
+        }
+        return .False;
+    }
+
+    pub fn isNumeric(obj: Robject) Rboolean {
+        if (Rf_isNumeric(obj) == 1) {
+            return .True;
+        }
+        return .False;
+    }
+
+    pub fn isLogical(obj: Robject) Rboolean {
+        if (Rf_isLogical(obj) == 1) {
+            return .True;
+        }
+        return .False;
+    }
+
+    /// R matrix is also an R array
+    pub fn isArray(obj: Robject) Rboolean {
+        if (Rf_isArray(obj) == 1) {
+            return .True;
+        }
+        return .False;
+    }
+
+    pub fn isFactor(obj: Robject) Rboolean {
+        if (Rf_isFactor(obj) == 1) {
+            return .True;
+        }
+        return .False;
+    }
+
+    pub fn isObject(obj: Robject) Rboolean {
+        if (Rf_isObject(obj) == 1) {
+            return .True;
+        }
+        return .False;
+    }
+
+    pub fn isFunction(obj: Robject) Rboolean {
+        if (Rf_isFunction(obj) == 1) {
+            return .True;
+        }
+        return .False;
+    }
+
+    pub fn isLanguage(obj: Robject) Rboolean {
+        if (Rf_isLanguage(obj) == 1) {
+            return .True;
+        }
+        return .False;
+    }
+
+    pub fn isNewList(obj: Robject) Rboolean {
+        if (Rf_isNewList(obj) == 1) {
+            return .True;
+        }
+        return .False;
+    }
+
+    pub fn isList(obj: Robject) Rboolean {
+        if (Rf_isList(obj) == 1) {
+            return .True;
+        }
+        return .False;
+    }
+
+    pub fn isOrdered(obj: Robject) Rboolean {
+        if (Rf_isOrdered(obj) == 1) {
+            return .True;
+        }
+        return .False;
+    }
+
+    pub fn isUnOrdered(obj: Robject) Rboolean {
+        if (Rf_isUnordered(obj) == 1) {
+            return .True;
+        }
+        return .False;
+    }
 };
 
-pub const Rboolean = c_uint;
+pub const Rbool = c_uint;
 pub const Rbyte = u8;
 pub const Sexp = ?*Sexprec;
 pub const R_allocator_t = opaque {};
@@ -116,40 +253,40 @@ pub extern fn R_IsNA(f64) c_int;
 pub extern fn R_IsNaN(f64) c_int;
 pub extern fn R_finite(f64) c_int;
 pub extern fn R_CHAR(x: Sexp) [*c]const u8;
-pub extern fn Rf_isNull(s: Sexp) Rboolean;
-pub extern fn Rf_isSymbol(s: Sexp) Rboolean;
-pub extern fn Rf_isLogical(s: Sexp) Rboolean;
-pub extern fn Rf_isReal(s: Sexp) Rboolean;
-pub extern fn Rf_isComplex(s: Sexp) Rboolean;
-pub extern fn Rf_isExpression(s: Sexp) Rboolean;
-pub extern fn Rf_isEnvironment(s: Sexp) Rboolean;
-pub extern fn Rf_isString(s: Sexp) Rboolean;
-pub extern fn Rf_isObject(s: Sexp) Rboolean;
-pub extern fn Rf_any_duplicated(x: Sexp, from_last: Rboolean) c_long;
-pub extern fn Rf_any_duplicated3(x: Sexp, incomp: Sexp, from_last: Rboolean) c_long;
-pub extern fn Rf_duplicated(Sexp, Rboolean) Sexp;
-pub extern fn Rf_isArray(Sexp) Rboolean;
-pub extern fn Rf_isFactor(Sexp) Rboolean;
-pub extern fn Rf_isFrame(Sexp) Rboolean;
-pub extern fn Rf_isFunction(Sexp) Rboolean;
-pub extern fn Rf_isInteger(Sexp) Rboolean;
-pub extern fn Rf_isLanguage(Sexp) Rboolean;
-pub extern fn Rf_isList(Sexp) Rboolean;
-pub extern fn Rf_isMatrix(Sexp) Rboolean;
-pub extern fn Rf_isNewList(Sexp) Rboolean;
-pub extern fn Rf_isNumber(Sexp) Rboolean;
-pub extern fn Rf_isNumeric(Sexp) Rboolean;
-pub extern fn Rf_isPairList(Sexp) Rboolean;
-pub extern fn Rf_isPrimitive(Sexp) Rboolean;
-pub extern fn Rf_isTs(Sexp) Rboolean;
-pub extern fn Rf_isUserBinop(Sexp) Rboolean;
-pub extern fn Rf_isValidString(Sexp) Rboolean;
-pub extern fn Rf_isValidStringF(Sexp) Rboolean;
-pub extern fn Rf_isVector(Sexp) Rboolean;
-pub extern fn Rf_isVectorAtomic(Sexp) Rboolean;
-pub extern fn Rf_isVectorList(Sexp) Rboolean;
-pub extern fn Rf_isVectorizable(Sexp) Rboolean;
-pub extern fn R_isTRUE(Sexp) Rboolean;
+pub extern fn Rf_isNull(s: Sexp) Rbool;
+pub extern fn Rf_isSymbol(s: Sexp) Rbool;
+pub extern fn Rf_isLogical(s: Sexp) Rbool;
+pub extern fn Rf_isReal(s: Sexp) Rbool;
+pub extern fn Rf_isComplex(s: Sexp) Rbool;
+pub extern fn Rf_isExpression(s: Sexp) Rbool;
+pub extern fn Rf_isEnvironment(s: Sexp) Rbool;
+pub extern fn Rf_isString(s: Sexp) Rbool;
+pub extern fn Rf_isObject(s: Sexp) Rbool;
+pub extern fn Rf_any_duplicated(x: Sexp, from_last: Rbool) c_long;
+pub extern fn Rf_any_duplicated3(x: Sexp, incomp: Sexp, from_last: Rbool) c_long;
+pub extern fn Rf_duplicated(Sexp, Rbool) Sexp;
+pub extern fn Rf_isArray(Sexp) Rbool;
+pub extern fn Rf_isFactor(Sexp) Rbool;
+pub extern fn Rf_isFrame(Sexp) Rbool;
+pub extern fn Rf_isFunction(Sexp) Rbool;
+pub extern fn Rf_isInteger(Sexp) Rbool;
+pub extern fn Rf_isLanguage(Sexp) Rbool;
+pub extern fn Rf_isList(Sexp) Rbool;
+pub extern fn Rf_isMatrix(Sexp) Rbool;
+pub extern fn Rf_isNewList(Sexp) Rbool;
+pub extern fn Rf_isNumber(Sexp) Rbool;
+pub extern fn Rf_isNumeric(Sexp) Rbool;
+pub extern fn Rf_isPairList(Sexp) Rbool;
+pub extern fn Rf_isPrimitive(Sexp) Rbool;
+pub extern fn Rf_isTs(Sexp) Rbool;
+pub extern fn Rf_isUserBinop(Sexp) Rbool;
+pub extern fn Rf_isValidString(Sexp) Rbool;
+pub extern fn Rf_isValidStringF(Sexp) Rbool;
+pub extern fn Rf_isVector(Sexp) Rbool;
+pub extern fn Rf_isVectorAtomic(Sexp) Rbool;
+pub extern fn Rf_isVectorList(Sexp) Rbool;
+pub extern fn Rf_isVectorizable(Sexp) Rbool;
+pub extern fn R_isTRUE(Sexp) Rbool;
 
 // to or from R object conversions
 pub extern fn Rf_asChar(Sexp) Sexp;
@@ -173,8 +310,8 @@ pub extern fn Rf_allocList(c_int) Sexp;
 pub extern fn Rf_allocS4Object() Sexp;
 pub extern fn Rf_allocSExp(c_uint) Sexp;
 pub extern fn Rf_allocVector3(c_uint, c_long, ?*R_allocator_t) Sexp;
-pub extern fn Rf_copyMatrix(Sexp, Sexp, Rboolean) void;
-pub extern fn Rf_copyListMatrix(Sexp, Sexp, Rboolean) void;
+pub extern fn Rf_copyMatrix(Sexp, Sexp, Rbool) void;
+pub extern fn Rf_copyListMatrix(Sexp, Sexp, Rbool) void;
 pub extern fn Rf_copyMostAttrib(Sexp, Sexp) void;
 pub extern fn Rf_copyVector(Sexp, Sexp) void;
 
@@ -256,17 +393,17 @@ pub extern fn R_qsort(v: [*c]f64, i: usize, j: usize) void;
 pub extern fn R_qsort_I(v: [*c]f64, II: [*c]c_int, i: c_int, j: c_int) void;
 pub extern fn R_qsort_int(iv: [*c]c_int, i: usize, j: usize) void;
 pub extern fn R_qsort_int_I(iv: [*c]c_int, II: [*c]c_int, i: c_int, j: c_int) void;
-pub extern fn Rf_isOrdered(Sexp) Rboolean;
-pub extern fn Rf_isUnordered(Sexp) Rboolean;
-pub extern fn Rf_isUnsorted(Sexp, Rboolean) Rboolean;
+pub extern fn Rf_isOrdered(Sexp) Rbool;
+pub extern fn Rf_isUnordered(Sexp) Rbool;
+pub extern fn Rf_isUnsorted(Sexp, Rbool) Rbool;
 
 // Filesystem
 pub extern fn R_ExpandFileName([*c]const u8) [*c]const u8;
 
 // Some string predicates
-pub extern fn Rf_StringFalse([*c]const u8) Rboolean;
-pub extern fn Rf_StringTrue([*c]const u8) Rboolean;
-pub extern fn Rf_isBlankString([*c]const u8) Rboolean;
+pub extern fn Rf_StringFalse([*c]const u8) Rbool;
+pub extern fn Rf_StringTrue([*c]const u8) Rbool;
+pub extern fn Rf_isBlankString([*c]const u8) Rbool;
 
 // Runtime checks
 pub extern fn R_CheckUserInterrupt() void;
