@@ -9,12 +9,13 @@ const rzig = @import("Rzig.zig");
 // private types
 const Robject = Sexp;
 const Rboolean = rzig.Rboolean;
+const Rtype = rzig.Rtype;
 
 // types
 pub const Sexprec = opaque {
     /// Protect object from R's GC
-    pub fn protect(obj: Robject) Robject {
-        return rzig.gc.protect_stack.protectSafe(obj) catch |e| {
+    pub fn protect(self: Robject) Robject {
+        return rzig.gc.protect_stack.protectSafe(self) catch |e| {
             rzig.errors.stop("Failed to protect object. Caught {!}", .{e});
             unreachable;
         };
@@ -22,140 +23,26 @@ pub const Sexprec = opaque {
 
     /// Unprotect object from GC. Pops the object at the top of the stack.
     /// Caller needs to make sure the object is at the top of the stack.
-    pub fn unprotect(obj: Robject) void {
-        _ = obj;
+    pub fn unprotect(self: Robject) void {
+        _ = self;
         rzig.gc.protect_stack.unprotectOnce();
     }
 
-    /// Returns `.True` for any atomic vector type, lists, expressions
-    pub fn isVector(obj: Robject) Rboolean {
-        if (Rf_isVector(obj) == 1) {
-            return .True;
-        }
-        return .False;
+    pub fn isVector(self: Robject) bool {
+        const bit: u1 = @intCast(Rf_isVector(self));
+        return @bitCast(bit);
     }
 
-    /// Returns `.True` for any atomic vector type
-    pub fn isVectorAtomic(obj: Robject) Rboolean {
-        if (Rf_isVectorAtomic(obj) == 1) {
-            return .True;
-        }
-        return .False;
+    pub fn isTypeOf(self: Robject, t: Rtype) bool {
+        return TYPEOF(self) == @as(c_uint, @intCast(t.int()));
     }
 
-    /// Returns `.True` for R list or R expression
-    pub fn isVectorList(obj: Robject) Rboolean {
-        if (Rf_isVectorList(obj) == 1) {
-            return .True;
-        }
-        return .False;
+    pub fn isOrdered(self: Robject) bool {
+        return Rf_isOrdered(self) == 1;
     }
 
-    /// Returns `.True` if matrix has a length-2 `dim` attribute
-    pub fn isMatrix(obj: Robject) Rboolean {
-        if (Rf_isMatrix(obj) == 1) {
-            return .True;
-        }
-        return .False;
-    }
-
-    pub fn isPairList(obj: Robject) Rboolean {
-        if (Rf_isPairList(obj) == 1) {
-            return .True;
-        }
-        return .False;
-    }
-
-    pub fn isPrimitive(obj: Robject) Rboolean {
-        if (Rf_isPrimitive(obj) == 1) {
-            return .True;
-        }
-        return .False;
-    }
-
-    pub fn isTs(obj: Robject) Rboolean {
-        if (Rf_isTs(obj) == 1) {
-            return .True;
-        }
-        return .False;
-    }
-
-    pub fn isNumeric(obj: Robject) Rboolean {
-        if (Rf_isNumeric(obj) == 1) {
-            return .True;
-        }
-        return .False;
-    }
-
-    pub fn isLogical(obj: Robject) Rboolean {
-        if (Rf_isLogical(obj) == 1) {
-            return .True;
-        }
-        return .False;
-    }
-
-    /// R matrix is also an R array
-    pub fn isArray(obj: Robject) Rboolean {
-        if (Rf_isArray(obj) == 1) {
-            return .True;
-        }
-        return .False;
-    }
-
-    pub fn isFactor(obj: Robject) Rboolean {
-        if (Rf_isFactor(obj) == 1) {
-            return .True;
-        }
-        return .False;
-    }
-
-    pub fn isObject(obj: Robject) Rboolean {
-        if (Rf_isObject(obj) == 1) {
-            return .True;
-        }
-        return .False;
-    }
-
-    pub fn isFunction(obj: Robject) Rboolean {
-        if (Rf_isFunction(obj) == 1) {
-            return .True;
-        }
-        return .False;
-    }
-
-    pub fn isLanguage(obj: Robject) Rboolean {
-        if (Rf_isLanguage(obj) == 1) {
-            return .True;
-        }
-        return .False;
-    }
-
-    pub fn isNewList(obj: Robject) Rboolean {
-        if (Rf_isNewList(obj) == 1) {
-            return .True;
-        }
-        return .False;
-    }
-
-    pub fn isList(obj: Robject) Rboolean {
-        if (Rf_isList(obj) == 1) {
-            return .True;
-        }
-        return .False;
-    }
-
-    pub fn isOrdered(obj: Robject) Rboolean {
-        if (Rf_isOrdered(obj) == 1) {
-            return .True;
-        }
-        return .False;
-    }
-
-    pub fn isUnOrdered(obj: Robject) Rboolean {
-        if (Rf_isUnordered(obj) == 1) {
-            return .True;
-        }
-        return .False;
+    pub fn isUnOrdered(self: Robject) bool {
+        return Rf_isUnordered(self) == 1;
     }
 };
 
@@ -249,6 +136,7 @@ pub const Rcomplex = extern union {
 };
 
 // type/value checking
+pub extern fn TYPEOF(x: Sexp) c_int;
 pub extern fn R_IsNA(f64) c_int;
 pub extern fn R_IsNaN(f64) c_int;
 pub extern fn R_finite(f64) c_int;

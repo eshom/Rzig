@@ -14,15 +14,6 @@ const r_null = constants.r_null;
 /// Must use R API functions to access values and coerce to other types.
 pub const Robject = r.Sexp;
 
-pub const Rboolean = enum(c_uint) {
-    False = 0,
-    True = 1,
-
-    pub fn int(self: Rboolean) c_uint {
-        return @intFromEnum(self);
-    }
-};
-
 pub const Rcomplex = r.Rcomplex;
 
 ///no   SEXPTYPE      Description
