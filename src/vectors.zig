@@ -10,7 +10,6 @@ const errors = @import("errors.zig");
 const r_null = constants.r_null;
 const Allocator = mem.Allocator;
 const Rtype = types.Rtype;
-const Rboolean = types.Rboolean;
 
 pub const Robject = types.Robject;
 

@@ -293,7 +293,10 @@ pub extern fn Rf_isUnsorted(Sexp, Rbool) Rbool;
 // Filesystem
 pub extern fn R_ExpandFileName([*c]const u8) [*c]const u8;
 
-// Some string predicates
+// Strings
+pub extern fn Rf_mkCharLen([*c]const u8, c_int) Sexp;
+pub extern fn Rf_mkCharLenCE([*c]const u8, c_int, c_uint) Sexp;
+pub extern fn Rf_getCharCE(Sexp) c_uint;
 pub extern fn Rf_StringFalse([*c]const u8) Rbool;
 pub extern fn Rf_StringTrue([*c]const u8) Rbool;
 pub extern fn Rf_isBlankString([*c]const u8) Rbool;

@@ -79,6 +79,14 @@ test "R type checks" {
     const code =
         \\dyn.load('zig-out/tests/lib/libRtests.so')
         \\obj <- list()
+        \\obj[[1]] <- quote(x)
+        \\obj[[2]] <- pairlist(1)
+        \\obj[[3]] <- function(x) 1 + 1
+        \\obj[[4]] <- new.env()
+        \\obj[[5]] <- call("any")
+        \\obj[[6]] <- `[`
+        \\obj[[7]] <- `+`
+        \\obj[[8]] <- "test"
         \\.Call('testIsObjects', obj)
     ;
 
@@ -97,6 +105,33 @@ test "R type checks" {
 
     const expected =
         \\[[1]]
+        \\[1] TRUE
+        \\
+        \\[[2]]
+        \\[1] TRUE
+        \\
+        \\[[3]]
+        \\[1] TRUE
+        \\
+        \\[[4]]
+        \\[1] TRUE
+        \\
+        \\[[5]]
+        \\[1] TRUE
+        \\
+        \\[[6]]
+        \\[1] TRUE
+        \\
+        \\[[7]]
+        \\[1] TRUE
+        \\
+        \\[[8]]
+        \\[1] TRUE
+        \\
+        \\[[9]]
+        \\[1] TRUE
+        \\
+        \\[[10]]
         \\[1] TRUE
         \\
         \\

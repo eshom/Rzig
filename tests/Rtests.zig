@@ -171,8 +171,23 @@ export fn testAllocateSomeVectors() Robject {
 }
 
 export fn testIsObjects(list: Robject) Robject {
+    //TODO: Add .Promise type check, not sure how to create or pass one from R.
     defer rzig.gc.protect_stack.unprotectAll();
-    const results = rzig.vec.allocVector(.List, 1).?.protect();
+    const results = rzig.vec.allocVector(.List, 10).?.protect();
+
+    const char_vec = rzig.vec.getListObj(list, 7);
+    const string_obj = rzig.strings.getString(char_vec, 0);
+
     rzig.vec.setListObj(results, 0, rzig.vec.asScalarVector(list.?.isTypeOf(.List)));
+    rzig.vec.setListObj(results, 1, rzig.vec.asScalarVector(r_null.*.?.isTypeOf(.NULL)));
+    rzig.vec.setListObj(results, 2, rzig.vec.asScalarVector(rzig.vec.getListObj(list.?, 0).?.isTypeOf(.Symbol)));
+    rzig.vec.setListObj(results, 3, rzig.vec.asScalarVector(rzig.vec.getListObj(list.?, 1).?.isTypeOf(.Pairlist)));
+    rzig.vec.setListObj(results, 4, rzig.vec.asScalarVector(rzig.vec.getListObj(list.?, 2).?.isTypeOf(.Closure)));
+    rzig.vec.setListObj(results, 5, rzig.vec.asScalarVector(rzig.vec.getListObj(list.?, 3).?.isTypeOf(.Environment)));
+    rzig.vec.setListObj(results, 6, rzig.vec.asScalarVector(rzig.vec.getListObj(list.?, 4).?.isTypeOf(.LanguageObject)));
+    rzig.vec.setListObj(results, 7, rzig.vec.asScalarVector(rzig.vec.getListObj(list.?, 5).?.isTypeOf(.SpecialFunction)));
+    rzig.vec.setListObj(results, 8, rzig.vec.asScalarVector(rzig.vec.getListObj(list.?, 6).?.isTypeOf(.BuiltinFunction)));
+    rzig.vec.setListObj(results, 9, rzig.vec.asScalarVector(string_obj.?.isTypeOf(.String)));
+
     return results;
 }

@@ -29,6 +29,9 @@ pub const gc = @import("gc.zig");
 // R Vector handling
 pub const vec = @import("vectors.zig");
 
+// String handling
+pub const strings = @import("strings.zig");
+
 test {
     testing.refAllDecls(@This());
 }
