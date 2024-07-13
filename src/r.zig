@@ -7,14 +7,13 @@ const rzig = @import("Rzig.zig");
 // });
 
 // private types
-const Robject = Sexp;
-const Rboolean = rzig.Rboolean;
 const Rtype = rzig.Rtype;
 
 // types
 pub const Sexprec = opaque {
+    const Self = @This();
     /// Protect object from R's GC
-    pub fn protect(self: Robject) Robject {
+    pub fn protect(self: *Self) ?*Self {
         return rzig.gc.protect_stack.protectSafe(self) catch |e| {
             rzig.errors.stop("Failed to protect object. Caught {!}", .{e});
             unreachable;
@@ -23,25 +22,25 @@ pub const Sexprec = opaque {
 
     /// Unprotect object from GC. Pops the object at the top of the stack.
     /// Caller needs to make sure the object is at the top of the stack.
-    pub fn unprotect(self: Robject) void {
+    pub fn unprotect(self: *Self) void {
         _ = self;
         rzig.gc.protect_stack.unprotectOnce();
     }
 
-    pub fn isVector(self: Robject) bool {
+    pub fn isVector(self: *Self) bool {
         const bit: u1 = @intCast(Rf_isVector(self));
         return @bitCast(bit);
     }
 
-    pub fn isTypeOf(self: Robject, t: Rtype) bool {
+    pub fn isTypeOf(self: *Self, t: Rtype) bool {
         return TYPEOF(self) == @as(c_uint, @intCast(t.int()));
     }
 
-    pub fn isOrdered(self: Robject) bool {
+    pub fn isOrdered(self: *Self) bool {
         return Rf_isOrdered(self) == 1;
     }
 
-    pub fn isUnOrdered(self: Robject) bool {
+    pub fn isUnOrdered(self: *Self) bool {
         return Rf_isUnordered(self) == 1;
     }
 };
