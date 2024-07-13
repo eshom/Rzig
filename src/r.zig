@@ -1,4 +1,5 @@
 const std = @import("std");
+const rzig = @import("Rzig.zig");
 // pub usingnamespace @cImport({
 //     @cDefine("R_NO_REMAP", {});
 //     @cInclude("R.h");
@@ -6,9 +7,23 @@ const std = @import("std");
 // });
 
 // types
-const Rboolean = c_uint;
+const Robject = Sexp;
+pub const Sexprec = opaque {
+    pub fn protect(obj: Robject) Robject {
+        return rzig.gc.protect_stack.protectSafe(obj) catch |e| {
+            rzig.errors.stop("Failed to protect object. Caught {!}", .{e});
+            unreachable;
+        };
+    }
+
+    pub fn unprotect(obj: Robject) void {
+        _ = obj;
+        rzig.gc.protect_stack.unprotectOnce();
+    }
+};
+
+pub const Rboolean = c_uint;
 pub const Rbyte = u8;
-pub const Sexprec = opaque {};
 pub const Sexp = ?*Sexprec;
 pub const R_allocator_t = opaque {};
 
@@ -82,7 +97,7 @@ pub extern var R_BlankScalarString: Sexp;
 
 //NOTE: This may not be type safe. Consider just using opaque{} instead of
 //trying to expose the underlying type
-const Rcomplex = extern union {
+pub const Rcomplex = extern union {
     data: extern struct {
         r: f64 = std.mem.zeroes(f64),
         i: f64 = std.mem.zeroes(f64),

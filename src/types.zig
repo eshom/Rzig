@@ -16,27 +16,13 @@ pub const Robject = r.Sexp;
 pub const Rboolean = enum(c_uint) {
     False = 0,
     True = 1,
+
+    pub fn int(self: Rboolean) c_uint {
+        return @intFromEnum(self);
+    }
 };
 
-// NOTE: complex not supported see https://github.com/ziglang/zig/issues/16278
-// TODO: Use an opaque pointer to support complex
-//
-// const r_legacy_complex = @hasDecl(r, "R_LEGACY_RCOMPLEX");
-// pub const RComplex = if (r_legacy_complex)
-// out: {
-//     break :out extern struct {
-//         r: f64,
-//         i: f64,
-//     };
-// } else out: {
-//     break :out extern union {
-//         anon: extern struct {
-//             r: f64,
-//             i: f64,
-//         },
-//         private_data_c: [2]f64,
-//     };
-// };
+pub const Rcomplex = r.Rcomplex;
 
 ///no   SEXPTYPE      Description
 ///0    NILSXP        NULL

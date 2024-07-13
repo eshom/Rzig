@@ -144,23 +144,22 @@ export fn testPrintValue(expr: Robject, envir: Robject) Robject {
 }
 
 export fn testAllocateSomeVectors() Robject {
-    var prot = rzig.gc.ProtectStack.init();
-    defer prot.deinit();
+    defer rzig.gc.protect_stack.unprotectAll();
 
-    const list = prot.protect(rzig.vec.allocVector(.List, 3)) catch unreachable;
-    const numeric = prot.protect(rzig.vec.allocVector(.NumericVector, 3)) catch unreachable;
-    const ints = prot.protect(rzig.vec.allocVector(.IntegerVector, 3)) catch unreachable;
-    const logicals = prot.protect(rzig.vec.allocVector(.LogicalVector, 3)) catch unreachable;
+    const list = rzig.vec.allocVector(.List, 3).?.protect();
+    const numeric = rzig.vec.allocVector(.NumericVector, 3).?.protect();
+    const ints = rzig.vec.allocVector(.IntegerVector, 3).?.protect();
+    const logicals = rzig.vec.allocVector(.LogicalVector, 3).?.protect();
 
-    for (rzig.vec.toSlice(f64, numeric) catch unreachable) |*val| {
+    for (rzig.vec.toSlice(f64, numeric)) |*val| {
         val.* = 0.5;
     }
 
-    for (rzig.vec.toSlice(i32, ints) catch unreachable) |*val| {
+    for (rzig.vec.toSlice(i32, ints)) |*val| {
         val.* = 0;
     }
 
-    for (rzig.vec.toU32SliceFromLogical(logicals) catch unreachable) |*val| {
+    for (rzig.vec.toU32SliceFromLogical(logicals)) |*val| {
         val.* = 0;
     }
 

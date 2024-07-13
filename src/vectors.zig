@@ -5,6 +5,7 @@ const mem = std.mem;
 const r = @import("r.zig");
 const constants = @import("constants.zig");
 const types = @import("types.zig");
+const errors = @import("errors.zig");
 
 const r_null = constants.r_null;
 const Allocator = mem.Allocator;
@@ -39,11 +40,12 @@ pub fn length32(obj: Robject) i32 {
 /// Resize R vector to shorter length.
 /// There is no gurantee allocated object is re-used.
 /// For saftey protect result object.
-pub fn resizeVec(obj: Robject, new_len: usize) SizeError!Robject {
+pub fn resizeVec(obj: Robject, new_len: usize) Robject {
     const len = length(obj);
 
     if (len > new_len) {
-        return SizeError.CannotEnlarge;
+        errors.stop("Cannot enlarge vector. Only shrinking is supported.");
+        unreachable;
     }
 
     return r.Rf_xlengthgets(obj, @intCast(new_len));
@@ -51,15 +53,17 @@ pub fn resizeVec(obj: Robject, new_len: usize) SizeError!Robject {
 
 /// Resize R vector to shorter length. 32-bit version
 /// See: `resizeVec()`
-pub fn resizeVec32(obj: Robject, new_len: usize) SizeError!Robject {
+pub fn resizeVec32(obj: Robject, new_len: usize) Robject {
     const len = length(obj);
 
     if (len > new_len) {
-        return SizeError.CannotEnlarge;
+        errors.stop("Cannot enlarge vector. Only shrinking is supported.");
+        unreachable;
     }
 
     if (len > math.maxInt(c_int)) {
-        return SizeError.IntegerTooSmall;
+        errors.stop("Trying to resize 64-bit vector with 32-bit version. Use `resizeVec()` instead.");
+        unreachable;
     }
 
     return r.Rf_lengthgets(obj, @intCast(new_len));
@@ -70,7 +74,7 @@ pub fn resizeVec32(obj: Robject, new_len: usize) SizeError!Robject {
 /// If coercsion is not supported, returns `UnsupportedType`.
 ///
 /// Return value must be protected from GC by caller.
-pub fn asVector(to: Rtype, from: Robject) CoercionError!Robject {
+pub fn asVector(to: Rtype, from: Robject) Robject {
     const out: Robject = switch (to) {
         .LogicalVector,
         .IntegerVector,
@@ -80,7 +84,7 @@ pub fn asVector(to: Rtype, from: Robject) CoercionError!Robject {
         .List,
         .RawVector,
         => r.Rf_coerceVector(from, @intCast(@intFromEnum(to))),
-        else => return CoercionError.UnsupportedType,
+        else => @compileError("Coercsion to vector not supported for specified tag"),
     };
 
     return out;
@@ -101,7 +105,7 @@ pub fn setListObj(list: Robject, index: usize, what: Robject) void {
 ///
 /// bool type is not supported, as you can't cast []c_int to []bool.
 /// For bools use `getListObj()` and unwrap it with either `toBoolSlice()` or `toU32SliceFromLogical()`.
-pub fn getListElem(T: type, list: Robject, index: usize) CoercionError![]T {
+pub fn getListElem(T: type, list: Robject, index: usize) []T {
     return toSlice(T, getListObj(list, index));
 }
 
@@ -118,10 +122,12 @@ fn logicalToBool(v: c_int) bool {
 ///
 /// `from` must be an R vector otherwise `NotAVector` error is returned.
 /// Vectors with length greater than 1 return only their first element.
-pub fn asPrimitive(T: type, from: Robject) CoercionError!T {
+pub fn asPrimitive(T: type, from: Robject) T {
     const is_vec: Rboolean = types.isVector(from);
+
     if (is_vec == .False) {
-        return CoercionError.NotAVector;
+        errors.stop("Object to coerce must be a vector", .{});
+        unreachable;
     }
 
     const out: T = switch (T) {
@@ -129,7 +135,7 @@ pub fn asPrimitive(T: type, from: Robject) CoercionError!T {
         i32 => @intCast(r.Rf_asInteger(from)),
         bool => logicalToBool(r.Rf_asLogical(from)),
         f64 => r.Rf_asReal(from),
-        else => CoercionError.UnsupportedType,
+        else => @compileError("Coercsion is not supported for specified type"),
     };
 
     return out;
@@ -139,11 +145,12 @@ pub fn asPrimitive(T: type, from: Robject) CoercionError!T {
 /// Supported types: c_int, i32, f64
 ///
 /// For bools, use either `toBoolSlice()` or `toU32SliceFromLogical()`
-pub fn toSlice(T: type, from: Robject) CoercionError![]T {
+pub fn toSlice(T: type, from: Robject) []T {
     const is_vec = types.isVector(from);
 
     if (is_vec == .False) {
-        return CoercionError.NotAVector;
+        errors.stop("Object to coerce must be a vector", .{});
+        unreachable;
     }
 
     const len = length(from);
@@ -153,7 +160,7 @@ pub fn toSlice(T: type, from: Robject) CoercionError![]T {
         i32 => @ptrCast(r.INTEGER(from)[0..len]),
         f64 => r.REAL(from)[0..len],
         bool => @compileError("Cannot directly cast []c_int to []bool. Use either `toBoolSlice()` or `toU32SliceFromLogical()`"),
-        else => CoercionError.UnsupportedType,
+        else => @compileError("Coercsion is not supported for specified type"),
     };
 
     return out;
@@ -162,13 +169,17 @@ pub fn toSlice(T: type, from: Robject) CoercionError![]T {
 /// Convert R logical vector to slice of bools.
 ///
 /// Depending on the allocator used, caller or R's GC must free memory.
-pub fn toBoolSlice(allocator: Allocator, obj: Robject) (CoercionError || error{OutOfMemory})![]bool {
+pub fn toBoolSlice(allocator: Allocator, obj: Robject) []bool {
     if (types.isLogical(obj) == .False) {
-        return CoercionError.WrongType;
+        errors.stop("Object passed must be a logical vector.", .{});
+        unreachable;
     }
 
     const len = length(obj);
-    const out = try allocator.alloc(bool, len);
+    const out = allocator.alloc(bool, len) catch {
+        errors.stop("Failed allocation. Out of memory.", .{});
+        unreachable;
+    };
     const src: []c_int = r.LOGICAL(obj)[0..len];
 
     for (out, src) |*elem_dest, elem_src| {
@@ -179,9 +190,10 @@ pub fn toBoolSlice(allocator: Allocator, obj: Robject) (CoercionError || error{O
 }
 
 /// Convert R logical vector to underlying primitive type slice.
-pub fn toU32SliceFromLogical(obj: Robject) CoercionError![]u32 {
+pub fn toU32SliceFromLogical(obj: Robject) []u32 {
     if (types.isLogical(obj) == .False) {
-        return CoercionError.WrongType;
+        errors.stop("Object passed must be a logical vector.", .{});
+        unreachable;
     }
 
     const len = length(obj);
