@@ -11,10 +11,6 @@ const testing = std.testing;
 pub usingnamespace @import("types.zig");
 pub usingnamespace @import("constants.zig");
 
-// Internal R API exposed for convenience.
-// Intention is to deprecate when library is complete.
-pub const internal_R_api = r;
-
 // R memory allocators
 pub const heap = @import("allocator.zig");
 
