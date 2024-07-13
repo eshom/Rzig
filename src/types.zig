@@ -3,6 +3,7 @@
 const std = @import("std");
 const math = std.math;
 const mem = std.mem;
+const testing = std.testing;
 
 const r = @import("r.zig");
 const constants = @import("constants.zig");
@@ -83,133 +84,37 @@ pub const Rtype = enum(c_uint) {
     }
 };
 
-/// Returns `.True` for any atomic vector type, lists, expressions
-pub fn isVector(obj: Robject) Rboolean {
-    if (r.Rf_isVector(obj) == 1) {
-        return .True;
-    }
-    return .False;
-}
+test "R type checks" {
+    const code =
+        \\dyn.load('zig-out/tests/lib/libRtests.so')
+        \\obj <- list()
+        \\.Call('testIsObjects', obj)
+    ;
 
-/// Returns `.True` for any atomic vector type
-pub fn isVectorAtomic(obj: Robject) Rboolean {
-    if (r.Rf_isVectorAtomic(obj) == 1) {
-        return .True;
-    }
-    return .False;
-}
+    const result = try std.process.Child.run(.{
+        .allocator = testing.allocator,
+        .argv = &.{
+            "Rscript",
+            "--vanilla",
+            "-e",
+            code,
+        },
+    });
 
-/// Returns `.True` for R list or R expression
-pub fn isVectorList(obj: Robject) Rboolean {
-    if (r.Rf_isVectorList(obj) == 1) {
-        return .True;
-    }
-    return .False;
-}
+    defer testing.allocator.free(result.stdout);
+    defer testing.allocator.free(result.stderr);
 
-/// Returns `.True` if matrix has a length-2 `dim` attribute
-pub fn isMatrix(obj: Robject) Rboolean {
-    if (r.Rf_isMatrix(obj) == 1) {
-        return .True;
-    }
-    return .False;
-}
+    const expected =
+        \\[[1]]
+        \\[1] TRUE
+        \\
+        \\
+    ;
 
-pub fn isPairList(obj: Robject) Rboolean {
-    if (r.Rf_isPairList(obj) == 1) {
-        return .True;
-    }
-    return .False;
-}
+    testing.expectEqualStrings(expected, result.stdout) catch |err| {
+        std.debug.print("stderr:\n{s}\n", .{result.stderr});
+        return err;
+    };
 
-pub fn isPrimitive(obj: Robject) Rboolean {
-    if (r.Rf_isPrimitive(obj) == 1) {
-        return .True;
-    }
-    return .False;
-}
-
-pub fn isTs(obj: Robject) Rboolean {
-    if (r.Rf_isTs(obj) == 1) {
-        return .True;
-    }
-    return .False;
-}
-
-pub fn isNumeric(obj: Robject) Rboolean {
-    if (r.Rf_isNumeric(obj) == 1) {
-        return .True;
-    }
-    return .False;
-}
-
-pub fn isLogical(obj: Robject) Rboolean {
-    if (r.Rf_isLogical(obj) == 1) {
-        return .True;
-    }
-    return .False;
-}
-
-/// R matrix is also an R array
-pub fn isArray(obj: Robject) Rboolean {
-    if (r.Rf_isArray(obj) == 1) {
-        return .True;
-    }
-    return .False;
-}
-
-pub fn isFactor(obj: Robject) Rboolean {
-    if (r.Rf_isFactor(obj) == 1) {
-        return .True;
-    }
-    return .False;
-}
-
-pub fn isObject(obj: Robject) Rboolean {
-    if (r.Rf_isObject(obj) == 1) {
-        return .True;
-    }
-    return .False;
-}
-
-pub fn isFunction(obj: Robject) Rboolean {
-    if (r.Rf_isFunction(obj) == 1) {
-        return .True;
-    }
-    return .False;
-}
-
-pub fn isLanguage(obj: Robject) Rboolean {
-    if (r.Rf_isLanguage(obj) == 1) {
-        return .True;
-    }
-    return .False;
-}
-
-pub fn isNewList(obj: Robject) Rboolean {
-    if (r.Rf_isNewList(obj) == 1) {
-        return .True;
-    }
-    return .False;
-}
-
-pub fn isList(obj: Robject) Rboolean {
-    if (r.Rf_isList(obj) == 1) {
-        return .True;
-    }
-    return .False;
-}
-
-pub fn isOrdered(obj: Robject) Rboolean {
-    if (r.Rf_isOrdered(obj) == 1) {
-        return .True;
-    }
-    return .False;
-}
-
-pub fn isUnOrdered(obj: Robject) Rboolean {
-    if (r.Rf_isUnordered(obj) == 1) {
-        return .True;
-    }
-    return .False;
+    try testing.expectEqualStrings("", result.stderr);
 }

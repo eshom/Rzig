@@ -169,3 +169,16 @@ export fn testAllocateSomeVectors() Robject {
 
     return list;
 }
+
+export fn testIsObjects(list: Robject) Robject {
+    defer rzig.gc.protect_stack.unprotectAll();
+    const results = rzig.vec.allocVector(.List, 1).?.protect();
+
+    const x = list.?.isList();
+    const stdout = rzig.io.RStdoutWriter().writer();
+    stdout.print("Is List?? {any}\n", .{x}) catch unreachable;
+    stdout.print("List type: {any}, num: {d}\n", .{ rzig.Rtype.List, rzig.Rtype.List.int() }) catch unreachable;
+
+    rzig.vec.setListObj(results, 0, rzig.vec.asScalarVector(list.?.isList() == .True));
+    return results;
+}

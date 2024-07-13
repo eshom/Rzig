@@ -314,6 +314,12 @@ pub extern fn Rf_copyMatrix(Sexp, Sexp, Rbool) void;
 pub extern fn Rf_copyListMatrix(Sexp, Sexp, Rbool) void;
 pub extern fn Rf_copyMostAttrib(Sexp, Sexp) void;
 pub extern fn Rf_copyVector(Sexp, Sexp) void;
+pub extern fn Rf_ScalarComplex(Rcomplex) Sexp;
+pub extern fn Rf_ScalarInteger(c_int) Sexp;
+pub extern fn Rf_ScalarLogical(c_int) Sexp;
+pub extern fn Rf_ScalarRaw(Rbyte) Sexp;
+pub extern fn Rf_ScalarReal(f64) Sexp;
+pub extern fn Rf_ScalarString(Sexp) Sexp;
 
 // R object getters and setters
 pub extern fn LOGICAL(x: Sexp) [*c]c_int;

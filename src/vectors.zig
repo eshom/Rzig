@@ -71,7 +71,6 @@ pub fn resizeVec32(obj: Robject, new_len: usize) Robject {
 
 /// Coerces `Robject` to a specific `Rtype`.
 /// Returns `Robject` which points to requested type.
-/// If coercsion is not supported, returns `UnsupportedType`.
 ///
 /// Return value must be protected from GC by caller.
 pub fn asVector(to: Rtype, from: Robject) Robject {
@@ -123,7 +122,7 @@ fn logicalToBool(v: c_int) bool {
 /// `from` must be an R vector otherwise `NotAVector` error is returned.
 /// Vectors with length greater than 1 return only their first element.
 pub fn asPrimitive(T: type, from: Robject) T {
-    const is_vec: Rboolean = types.isVector(from);
+    const is_vec: Rboolean = from.?.isVector;
 
     if (is_vec == .False) {
         errors.stop("Object to coerce must be a vector", .{});
@@ -146,7 +145,7 @@ pub fn asPrimitive(T: type, from: Robject) T {
 ///
 /// For bools, use either `toBoolSlice()` or `toU32SliceFromLogical()`
 pub fn toSlice(T: type, from: Robject) []T {
-    const is_vec = types.isVector(from);
+    const is_vec = from.?.isVector();
 
     if (is_vec == .False) {
         errors.stop("Object to coerce must be a vector", .{});
@@ -191,7 +190,7 @@ pub fn toBoolSlice(allocator: Allocator, obj: Robject) []bool {
 
 /// Convert R logical vector to underlying primitive type slice.
 pub fn toU32SliceFromLogical(obj: Robject) []u32 {
-    if (types.isLogical(obj) == .False) {
+    if (obj.?.isLogical() == .False) {
         errors.stop("Object passed must be a logical vector.", .{});
         unreachable;
     }
@@ -201,8 +200,6 @@ pub fn toU32SliceFromLogical(obj: Robject) []u32 {
 }
 
 /// Coerces primitive type to R atomic vector.
-///
-/// Returns R NULL if coercsion is not supported.
 pub fn asScalarVector(from: anytype) Robject {
     const T = @TypeOf(from);
 
@@ -210,7 +207,7 @@ pub fn asScalarVector(from: anytype) Robject {
         f64 => r.Rf_ScalarReal(from),
         bool => r.Rf_ScalarLogical(@intCast(@intFromBool(from))),
         c_int, i32, comptime_int => r.Rf_ScalarInteger(@intCast(from)),
-        else => return r_null,
+        else => @compileError("Attempting to coerce unsupported type"),
     };
 
     return out;
