@@ -11,7 +11,7 @@ const Allocator = mem.Allocator;
 const Rtype = types.Rtype;
 const Rboolean = types.Rboolean;
 
-pub const Robject = ?*r.struct_SEXPREC;
+pub const Robject = types.Robject;
 
 pub const CoercionError = error{
     UnsupportedType,

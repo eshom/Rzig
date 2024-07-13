@@ -9,7 +9,7 @@ const fmt = std.fmt;
 const errors = @import("errors.zig");
 const Robject = @import("types.zig").Robject;
 
-const BUFFER_SIZE = r.BUFSIZ;
+const BUFFER_SIZE = r.BUFSIZE;
 
 const PrintError = error{
     LengthTooBig,

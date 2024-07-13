@@ -11,7 +11,7 @@ const r_null = constants.r_null;
 
 /// General purpose R object (SEXP).
 /// Must use R API functions to access values and coerce to other types.
-pub const Robject = ?*r.struct_SEXPREC;
+pub const Robject = r.Sexp;
 
 pub const Rboolean = enum(c_uint) {
     False = 0,
