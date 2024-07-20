@@ -8,6 +8,7 @@ const rzig = @import("Rzig.zig");
 
 // private types
 const Rtype = rzig.Rtype;
+const Encoding = rzig.strings.Encoding;
 
 // types
 pub const Sexprec = opaque {
@@ -33,7 +34,12 @@ pub const Sexprec = opaque {
     }
 
     pub fn isTypeOf(self: *Self, t: Rtype) bool {
-        return TYPEOF(self) == @as(c_uint, @intCast(t.int()));
+        return TYPEOF(self) == @as(SexpType, @intCast(t.int()));
+    }
+
+    pub fn typeOf(self: *Self) Rtype {
+        const t: SexpType = @intCast(TYPEOF(self));
+        return @enumFromInt(t);
     }
 
     pub fn isOrdered(self: *Self) bool {
@@ -49,6 +55,9 @@ pub const Rbool = c_uint;
 pub const Rbyte = u8;
 pub const Sexp = ?*Sexprec;
 pub const R_allocator_t = opaque {};
+pub const SexpType = c_uint;
+pub const Anyfn = ?*const fn () callconv(.C) ?*anyopaque;
+pub const AnyfnVoid = ?*const fn () callconv(.C) void;
 
 // constants and external variables/constants
 pub const BUFSIZE = 8192;
@@ -177,7 +186,7 @@ pub extern fn R_isTRUE(Sexp) Rbool;
 
 // to or from R object conversions
 pub extern fn Rf_asChar(Sexp) Sexp;
-pub extern fn Rf_coerceVector(Sexp, c_uint) Sexp;
+pub extern fn Rf_coerceVector(Sexp, SexpType) Sexp;
 pub extern fn Rf_PairToVectorList(x: Sexp) Sexp;
 pub extern fn Rf_VectorToPairList(x: Sexp) Sexp;
 pub extern fn Rf_asCharacterFactor(x: Sexp) Sexp;
@@ -187,16 +196,16 @@ pub extern fn Rf_asReal(x: Sexp) f64;
 pub extern fn Rf_asComplex(x: Sexp) Rcomplex;
 
 // copy or allocate objects
-pub extern fn Rf_allocVector(c_uint, c_long) Sexp;
+pub extern fn Rf_allocVector(SexpType, c_long) Sexp;
 pub extern fn Rf_acopy_string([*c]const u8) [*c]u8;
-pub extern fn Rf_alloc3DArray(c_uint, c_int, c_int, c_int) Sexp;
-pub extern fn Rf_allocArray(c_uint, Sexp) Sexp;
-pub extern fn Rf_allocMatrix(c_uint, c_int, c_int) Sexp;
+pub extern fn Rf_alloc3DArray(SexpType, c_int, c_int, c_int) Sexp;
+pub extern fn Rf_allocArray(SexpType, Sexp) Sexp;
+pub extern fn Rf_allocMatrix(SexpType, c_int, c_int) Sexp;
 pub extern fn Rf_allocLang(c_int) Sexp;
 pub extern fn Rf_allocList(c_int) Sexp;
 pub extern fn Rf_allocS4Object() Sexp;
-pub extern fn Rf_allocSExp(c_uint) Sexp;
-pub extern fn Rf_allocVector3(c_uint, c_long, ?*R_allocator_t) Sexp;
+pub extern fn Rf_allocSExp(SexpType) Sexp;
+pub extern fn Rf_allocVector3(SexpType, c_long, ?*R_allocator_t) Sexp;
 pub extern fn Rf_copyMatrix(Sexp, Sexp, Rbool) void;
 pub extern fn Rf_copyListMatrix(Sexp, Sexp, Rbool) void;
 pub extern fn Rf_copyMostAttrib(Sexp, Sexp) void;
@@ -213,7 +222,7 @@ pub extern fn LOGICAL(x: Sexp) [*c]c_int;
 pub extern fn INTEGER(x: Sexp) [*c]c_int;
 pub extern fn RAW(x: Sexp) [*c]Rbyte;
 pub extern fn REAL(x: Sexp) [*c]f64;
-pub extern fn COMPLEX(x: Sexp) ?*Rcomplex;
+pub extern fn COMPLEX(x: Sexp) [*c]Rcomplex;
 pub extern fn VECTOR_ELT(x: Sexp, i: c_long) Sexp;
 pub extern fn SET_VECTOR_ELT(x: Sexp, i: c_long, v: Sexp) Sexp;
 pub extern fn STRING_ELT(x: Sexp, i: c_long) Sexp;
@@ -260,18 +269,12 @@ pub extern fn R_ProtectWithIndex(Sexp, [*c]c_int) void;
 pub extern fn R_Reprotect(Sexp, c_int) void;
 
 // RNG
-pub extern fn R_sample_kind() c_uint;
 pub extern fn GetRNGstate() void;
 pub extern fn PutRNGstate() void;
 pub extern fn unif_rand() f64;
 pub extern fn R_unif_index(f64) f64;
 pub extern fn norm_rand() f64;
 pub extern fn exp_rand() f64;
-pub extern fn user_unif_rand() [*c]f64;
-pub extern fn user_unif_init(c_uint) void;
-pub extern fn user_unif_nseed() [*c]c_int;
-pub extern fn user_unif_seedloc() [*c]c_int;
-pub extern fn user_norm_rand() [*c]f64;
 
 // Sort
 pub extern fn R_isort([*c]c_int, c_int) void;
@@ -295,8 +298,8 @@ pub extern fn R_ExpandFileName([*c]const u8) [*c]const u8;
 
 // Strings
 pub extern fn Rf_mkCharLen([*c]const u8, c_int) Sexp;
-pub extern fn Rf_mkCharLenCE([*c]const u8, c_int, c_uint) Sexp;
-pub extern fn Rf_getCharCE(Sexp) c_uint;
+pub extern fn Rf_mkCharLenCE([*c]const u8, c_int, Encoding) Sexp;
+pub extern fn Rf_getCharCE(Sexp) Encoding;
 pub extern fn Rf_StringFalse([*c]const u8) Rbool;
 pub extern fn Rf_StringTrue([*c]const u8) Rbool;
 pub extern fn Rf_isBlankString([*c]const u8) Rbool;
@@ -310,6 +313,12 @@ pub extern fn R_CheckStack2(usize) void;
 pub extern fn R_FlushConsole() void;
 pub extern fn R_ProcessEvents() void;
 pub extern fn Rf_defineVar(Sexp, Sexp, Sexp) void;
+
+// External Pointers
+pub extern fn R_MakeExternalPtr(p: ?*anyopaque, tag: Sexp, prot: Sexp) Sexp;
+pub extern fn R_ExternalPtrAddr(s: Sexp) ?*anyopaque;
+pub extern fn R_MakeExternalPtrFn(p: Anyfn, tag: Sexp, prot: Sexp) Sexp;
+pub extern fn R_ExternalPtrAddrFn(s: Sexp) Anyfn;
 
 // Others
 pub extern fn Rf_eval(Sexp, Sexp) Sexp;

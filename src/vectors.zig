@@ -5,11 +5,12 @@ const mem = std.mem;
 const r = @import("r.zig");
 const rzig = @import("Rzig.zig");
 
-const errors = @import("errors.zig");
+const errors = rzig.errors;
 
 const Allocator = mem.Allocator;
 const Rtype = rzig.Rtype;
-pub const Robject = rzig.Robject;
+const Robject = rzig.Robject;
+const Rcomplex = rzig.Rcomplex;
 
 const r_null = rzig.r_null;
 
@@ -140,7 +141,7 @@ pub fn asPrimitive(T: type, from: Robject) T {
 }
 
 /// Convert R object to underlying primitive type slice
-/// Supported types: c_int, i32, f64
+/// Supported types: c_int, i32, f64, Rcomplex
 ///
 /// For bools, use either `toBoolSlice()` or `toU32SliceFromLogical()`
 pub fn toSlice(T: type, from: Robject) []T {
@@ -155,6 +156,7 @@ pub fn toSlice(T: type, from: Robject) []T {
         c_int => r.INTEGER(from)[0..len],
         i32 => @ptrCast(r.INTEGER(from)[0..len]),
         f64 => r.REAL(from)[0..len],
+        Rcomplex => r.COMPLEX(from)[0..len],
         bool => @compileError("Cannot directly cast []c_int to []bool. Use either `toBoolSlice()` or `toU32SliceFromLogical()`"),
         else => @compileError("Coercsion is not supported for specified type"),
     };

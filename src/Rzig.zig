@@ -28,6 +28,9 @@ pub const vec = @import("vectors.zig");
 // String handling
 pub const strings = @import("strings.zig");
 
+// External pointers
+pub const pointers = @import("pointers.zig");
+
 test {
     testing.refAllDecls(@This());
 }
@@ -113,6 +116,11 @@ test "R type checks" {
         \\obj[[6]] <- `[`
         \\obj[[7]] <- `+`
         \\obj[[8]] <- "test"
+        \\obj[[9]] <- c(TRUE, FALSE)
+        \\obj[[10]] <- 1:10
+        \\obj[[11]] <- c(1.0, 1.1)
+        \\obj[[12]] <- c(1i, 2i+1)
+        \\obj[[13]] <- expression(1 + 1)
         \\.Call('testIsObjects', obj)
     ;
 
@@ -158,6 +166,33 @@ test "R type checks" {
         \\[1] TRUE
         \\
         \\[[10]]
+        \\[1] TRUE
+        \\
+        \\[[11]]
+        \\[1] TRUE
+        \\
+        \\[[12]]
+        \\[1] TRUE
+        \\
+        \\[[13]]
+        \\[1] TRUE
+        \\
+        \\[[14]]
+        \\[1] TRUE
+        \\
+        \\[[15]]
+        \\[1] TRUE
+        \\
+        \\[[16]]
+        \\[1] 1+1i
+        \\
+        \\[[17]]
+        \\[1] TRUE
+        \\
+        \\[[18]]
+        \\[1] TRUE
+        \\
+        \\[[19]]
         \\[1] TRUE
         \\
         \\
