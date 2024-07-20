@@ -4,11 +4,11 @@ const std = @import("std");
 const mem = std.mem;
 const testing = std.testing;
 
-const RAssert = @import("errors.zig").RAssert;
-
-const Allocator = mem.Allocator;
-
 const r = @import("r.zig");
+const rzig = @import("Rzig.zig");
+
+const RAssert = rzig.errors.RAssert;
+const Allocator = mem.Allocator;
 
 /// Points to start of allocated region for free and resize.
 /// Following implementation of `std.heap.c_allocator`.

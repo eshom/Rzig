@@ -3,15 +3,15 @@ const math = std.math;
 const mem = std.mem;
 
 const r = @import("r.zig");
-const constants = @import("constants.zig");
-const types = @import("types.zig");
+const rzig = @import("Rzig.zig");
+
 const errors = @import("errors.zig");
 
-const r_null = constants.r_null;
 const Allocator = mem.Allocator;
-const Rtype = types.Rtype;
+const Rtype = rzig.Rtype;
+pub const Robject = rzig.Robject;
 
-pub const Robject = types.Robject;
+const r_null = rzig.r_null;
 
 pub const CoercionError = error{
     UnsupportedType,
@@ -24,6 +24,7 @@ pub const SizeError = error{
     IntegerTooSmall,
 };
 
+//TODO: Move length functions to Robject as methods
 /// Get length of R object
 pub fn length(obj: Robject) usize {
     const len = r.Rf_xlength(obj);
@@ -68,6 +69,7 @@ pub fn resizeVec32(obj: Robject, new_len: usize) Robject {
     return r.Rf_lengthgets(obj, @intCast(new_len));
 }
 
+//TODO: Move asVector-like functions to Robject as methods
 /// Coerces `Robject` to a specific `Rtype`.
 /// Returns `Robject` which points to requested type.
 ///

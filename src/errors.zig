@@ -1,12 +1,13 @@
 //! R control flow affecting error handling and warnings
 
-const r = @import("r.zig");
-const Robject = @import("types.zig").Robject;
-
 const std = @import("std");
 const fmt = std.fmt;
 const testing = std.testing;
 
+const r = @import("r.zig");
+const rzig = @import("Rzig.zig");
+
+const Robject = rzig.Robject;
 pub const ERR_BUF_SIZE = 1000; // undocumented. Seems like errors are truncated to this value from testing.
 
 /// Asserts expression. If false prints error to R managed stderr and returns

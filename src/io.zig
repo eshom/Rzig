@@ -1,14 +1,15 @@
 //! R printing utilities
-const r = @import("r.zig");
 const std = @import("std");
 const io = std.io;
 const math = std.math;
 const testing = std.testing;
 const fmt = std.fmt;
 
-const errors = @import("errors.zig");
-const Robject = @import("types.zig").Robject;
+const r = @import("r.zig");
+const rzig = @import("Rzig.zig");
+const errors = rzig.errors;
 
+const Robject = rzig.Robject;
 const BUFFER_SIZE = r.BUFSIZE;
 
 const PrintError = error{

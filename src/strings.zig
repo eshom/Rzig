@@ -3,11 +3,11 @@ const mem = std.mem;
 const math = std.math;
 
 const r = @import("r.zig");
-const types = @import("types.zig");
-const errors = @import("errors.zig");
-const vec = @import("vectors.zig");
+const rzig = @import("Rzig.zig");
+const errors = rzig.errors;
+const vec = rzig.vec;
 
-const Robject = types.Robject;
+const Robject = rzig.Robject;
 
 pub const Encoding = enum(c_uint) {
     native = 0,

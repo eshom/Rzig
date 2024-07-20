@@ -1,12 +1,14 @@
 //! GC related
 
-const r = @import("r.zig");
-const Robject = @import("Rzig.zig").Robject;
-const RAssert = @import("errors.zig").RAssert;
-
 const std = @import("std");
 const math = std.math;
 const testing = std.testing;
+
+const r = @import("r.zig");
+const rzig = @import("Rzig.zig");
+
+const Robject = rzig.Robject;
+const RAssert = rzig.errors.RAssert;
 
 const ProtectError = error{
     StackOverflow,
