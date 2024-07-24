@@ -127,20 +127,14 @@ pub extern var R_NaString: Sexp;
 pub extern var R_BlankString: Sexp;
 pub extern var R_BlankScalarString: Sexp;
 
-//NOTE: This may not be type safe. Consider just using opaque{} instead of
-//trying to expose the underlying type
+//NOTE: This may not be safe as calling convention is not defined for complex numbers.
+//Consider just using opaque{} instead of trying to support this.
 pub const Rcomplex = extern union {
     data: extern struct {
         r: f64 = std.mem.zeroes(f64),
         i: f64 = std.mem.zeroes(f64),
-    } align(8),
-    private_data_c: [2]f64 align(8),
-
-    comptime {
-        // If this is ever not true, just switch to `opaque{} and pass around pointers.
-        std.debug.assert(@sizeOf(Rcomplex) == 16);
-        std.debug.assert(@alignOf(Rcomplex) == 8);
-    }
+    },
+    private_data_c: [2]f64,
 };
 
 // type/value checking
