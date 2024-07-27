@@ -179,15 +179,10 @@ export fn testIsObjects(list: Robject) Robject {
     // .Any, although it might not be supported as part of the official API.
     // .Bytecode
     defer rzig.gc.protect_stack.unprotectAll();
-    const results = rzig.vec.allocVector(.List, 19).?.protect();
+    const results = rzig.vec.allocVector(.List, 17).?.protect();
 
     const char_vec = rzig.vec.getListObj(list, 7);
     const string_obj = rzig.strings.getString(char_vec, 0);
-
-    const complex_data: Rcomplex = .{ .data = .{ .r = 1, .i = 1 } };
-    const complex_vec = rzig.vec.allocVector(.ComplexVector, 1).?.protect();
-    const complex_ptr = rzig.vec.toSlice(Rcomplex, complex_vec);
-    complex_ptr[0] = complex_data;
 
     const ext_ptr = rzig.pointers.makeExternalPtr(@ptrCast(@constCast(&string_obj)), r_null.*, r_null.*);
 
@@ -205,11 +200,9 @@ export fn testIsObjects(list: Robject) Robject {
     rzig.vec.setListObj(results, 11, rzig.vec.asScalarVector(rzig.vec.getListObj(list.?, 9).?.isTypeOf(.IntegerVector)));
     rzig.vec.setListObj(results, 12, rzig.vec.asScalarVector(rzig.vec.getListObj(list.?, 10).?.isTypeOf(.NumericVector)));
     rzig.vec.setListObj(results, 13, rzig.vec.asScalarVector(rzig.vec.getListObj(list.?, 11).?.isTypeOf(.ComplexVector)));
-    rzig.vec.setListObj(results, 14, rzig.vec.asScalarVector(complex_vec.?.isTypeOf(.ComplexVector)));
-    rzig.vec.setListObj(results, 15, complex_vec);
-    rzig.vec.setListObj(results, 16, rzig.vec.asScalarVector(char_vec.?.isTypeOf(.CharacterVector)));
-    rzig.vec.setListObj(results, 17, rzig.vec.asScalarVector(rzig.vec.getListObj(list.?, 12).?.isTypeOf(.Expression)));
-    rzig.vec.setListObj(results, 18, rzig.vec.asScalarVector(ext_ptr.?.isTypeOf(.ExternalPointer)));
+    rzig.vec.setListObj(results, 14, rzig.vec.asScalarVector(rzig.vec.getListObj(list.?, 12).?.isTypeOf(.Expression)));
+    rzig.vec.setListObj(results, 15, rzig.vec.asScalarVector(char_vec.?.isTypeOf(.CharacterVector)));
+    rzig.vec.setListObj(results, 16, rzig.vec.asScalarVector(ext_ptr.?.isTypeOf(.ExternalPointer)));
 
     return results;
 }

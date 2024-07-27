@@ -51,6 +51,7 @@ pub const Sexprec = opaque {
     }
 };
 
+pub const Rcomplex = opaque {};
 pub const Rbool = c_uint;
 pub const Rbyte = u8;
 pub const Sexp = ?*Sexprec;
@@ -126,16 +127,6 @@ pub extern var R_dot_Generic: Sexp;
 pub extern var R_NaString: Sexp;
 pub extern var R_BlankString: Sexp;
 pub extern var R_BlankScalarString: Sexp;
-
-//NOTE: This may not be safe as calling convention is not defined for complex numbers.
-//Consider just using opaque{} instead of trying to support this.
-pub const Rcomplex = extern union {
-    data: extern struct {
-        r: f64 = std.mem.zeroes(f64),
-        i: f64 = std.mem.zeroes(f64),
-    },
-    private_data_c: [2]f64,
-};
 
 // type/value checking
 pub extern fn TYPEOF(x: Sexp) c_int;
