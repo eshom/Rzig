@@ -1,6 +1,7 @@
 const std = @import("std");
 const math = std.math;
 const mem = std.mem;
+const fmt = std.fmt;
 const testing = std.testing;
 
 const r = @import("r.zig");
@@ -202,28 +203,162 @@ pub fn toU32SliceFromLogical(obj: Robject) []u32 {
 pub fn asScalarVector(from: anytype) Robject {
     const T = @TypeOf(from);
 
-    //TODO: Handle arbitrary sized integers
     const out = switch (T) {
         f64 => r.Rf_ScalarReal(from),
+        c_int => r.Rf_ScalarInteger(@intCast(from)),
         bool => r.Rf_ScalarLogical(@intCast(@intFromBool(from))),
-        c_int, i32 => r.Rf_ScalarInteger(@intCast(from)),
-        i64, u64, isize, usize, comptime_int => out: {
-            if (from > math.maxInt(c_int)) {
-                errors.stop("Number is larger than 32-bit integer can represent. Max: {d}, found: {d}", .{ math.maxInt(c_int), from });
-                unreachable;
-            }
+        else => blk: {
+            switch (@typeInfo(T)) {
+                .Float, .ComptimeFloat => {
+                    break :blk r.Rf_ScalarReal(@floatCast(from));
+                },
+                .Int, .ComptimeInt => {
+                    if (from > math.maxInt(c_int)) {
+                        errors.stop("Number is larger than 32-bit integer can represent. Max: {d}, found: {d}", .{ math.maxInt(c_int), from });
+                        unreachable;
+                    }
 
-            if (from < math.minInt(c_int)) {
-                errors.stop("Number is smaller than 32-bit integer can represent. Min: {d}, found: {d}", .{ math.minInt(c_int), from });
-                unreachable;
-            }
+                    if (from < math.minInt(c_int)) {
+                        errors.stop("Number is smaller than 32-bit integer can represent. Min: {d}, found: {d}", .{ math.minInt(c_int), from });
+                        unreachable;
+                    }
 
-            break :out r.Rf_ScalarInteger(@intCast(from));
+                    break :blk r.Rf_ScalarInteger(@intCast(from));
+                },
+                else => @compileError("Attempting to coerce unsupported type"),
+            }
         },
-        else => @compileError("Attempting to coerce unsupported type"),
     };
 
     return out;
+}
+
+test "asScalarVector" {
+    const code =
+        \\dyn.load('zig-out/tests/lib/libRtests.so')
+        \\.Call('testAsScalarVector')
+    ;
+
+    const result = try std.process.Child.run(.{
+        .allocator = testing.allocator,
+        .argv = &.{
+            "Rscript",
+            "--vanilla",
+            "-e",
+            code,
+        },
+    });
+
+    defer testing.allocator.free(result.stdout);
+    defer testing.allocator.free(result.stderr);
+
+    const expected =
+        \\[[1]]
+        \\[1] 1.32456e+32
+        \\
+        \\[[2]]
+        \\[1] -9.87123e-32
+        \\
+        \\[[3]]
+        \\[1] Inf
+        \\
+        \\[[4]]
+        \\[1] -Inf
+        \\
+        \\[[5]]
+        \\[1] NaN
+        \\
+        \\[[6]]
+        \\[1] -9.1e+300
+        \\
+        \\[[7]]
+        \\[1] 1.2e-300
+        \\
+        \\[[8]]
+        \\[1] Inf
+        \\
+        \\[[9]]
+        \\[1] -Inf
+        \\
+        \\[[10]]
+        \\[1] NaN
+        \\
+        \\[[11]]
+        \\[1] -9.1e+307
+        \\
+        \\[[12]]
+        \\[1] 1.2e-307
+        \\
+        \\[[13]]
+        \\[1] Inf
+        \\
+        \\[[14]]
+        \\[1] -Inf
+        \\
+        \\[[15]]
+        \\[1] 5
+        \\
+        \\[[16]]
+        \\[1] -5
+        \\
+        \\[[17]]
+        \\[1] 4
+        \\
+        \\[[18]]
+        \\[1] -4
+        \\
+        \\[[19]]
+        \\[1] 0
+        \\
+        \\[[20]]
+        \\[1] 2000000000
+        \\
+        \\[[21]]
+        \\[1] -2000000000
+        \\
+        \\[[22]]
+        \\[1] TRUE
+        \\
+        \\[[23]]
+        \\[1] FALSE
+        \\
+        \\
+    ;
+
+    testing.expectEqualStrings(expected, result.stdout) catch |err| {
+        std.debug.print("stderr:\n{s}\n", .{result.stderr});
+        return err;
+    };
+
+    try testing.expectEqualStrings("", result.stderr);
+}
+
+test "asScalarVectorError" {
+    const code =
+        \\dyn.load('zig-out/tests/lib/libRtests.so')
+        \\.Call('testAsScalarVectorError')
+    ;
+
+    const result = try std.process.Child.run(.{
+        .allocator = testing.allocator,
+        .argv = &.{
+            "Rscript",
+            "--vanilla",
+            "-e",
+            code,
+        },
+    });
+
+    defer testing.allocator.free(result.stdout);
+    defer testing.allocator.free(result.stderr);
+
+    const expected = "Error: Number is larger than 32-bit integer can represent. Max: " ++
+        fmt.comptimePrint("{d}", .{math.maxInt(c_int)}) ++
+        ", found: 2000000000000\n" ++
+        "Execution halted\n";
+
+    try testing.expectEqualStrings("", result.stdout);
+    try testing.expectEqualStrings(expected, result.stderr);
 }
 
 /// Allocate new vector.

@@ -1,4 +1,6 @@
 const std = @import("std");
+const math = std.math;
+
 const rzig = @import("Rzig");
 
 const Robject = rzig.Robject;
@@ -178,31 +180,70 @@ export fn testIsObjects(list: Robject) Robject {
     // .Tripledot
     // .Any, although it might not be supported as part of the official API.
     // .Bytecode
-    defer rzig.gc.protect_stack.unprotectAll();
     const results = rzig.vec.allocVector(.List, 17).?.protect();
+    defer rzig.gc.protect_stack.unprotectAll();
 
     const char_vec = rzig.vec.getListObj(list, 7);
     const string_obj = rzig.strings.getString(char_vec, 0);
 
     const ext_ptr = rzig.pointers.makeExternalPtr(@ptrCast(@constCast(&string_obj)), r_null.*, r_null.*);
 
-    rzig.vec.setListObj(results, 0, rzig.vec.asScalarVector(list.?.isTypeOf(.List)));
-    rzig.vec.setListObj(results, 1, rzig.vec.asScalarVector(r_null.*.?.isTypeOf(.NULL)));
-    rzig.vec.setListObj(results, 2, rzig.vec.asScalarVector(rzig.vec.getListObj(list.?, 0).?.isTypeOf(.Symbol)));
-    rzig.vec.setListObj(results, 3, rzig.vec.asScalarVector(rzig.vec.getListObj(list.?, 1).?.isTypeOf(.Pairlist)));
-    rzig.vec.setListObj(results, 4, rzig.vec.asScalarVector(rzig.vec.getListObj(list.?, 2).?.isTypeOf(.Closure)));
-    rzig.vec.setListObj(results, 5, rzig.vec.asScalarVector(rzig.vec.getListObj(list.?, 3).?.isTypeOf(.Environment)));
-    rzig.vec.setListObj(results, 6, rzig.vec.asScalarVector(rzig.vec.getListObj(list.?, 4).?.isTypeOf(.LanguageObject)));
-    rzig.vec.setListObj(results, 7, rzig.vec.asScalarVector(rzig.vec.getListObj(list.?, 5).?.isTypeOf(.SpecialFunction)));
-    rzig.vec.setListObj(results, 8, rzig.vec.asScalarVector(rzig.vec.getListObj(list.?, 6).?.isTypeOf(.BuiltinFunction)));
-    rzig.vec.setListObj(results, 9, rzig.vec.asScalarVector(string_obj.?.isTypeOf(.String)));
-    rzig.vec.setListObj(results, 10, rzig.vec.asScalarVector(rzig.vec.getListObj(list.?, 8).?.isTypeOf(.LogicalVector)));
-    rzig.vec.setListObj(results, 11, rzig.vec.asScalarVector(rzig.vec.getListObj(list.?, 9).?.isTypeOf(.IntegerVector)));
-    rzig.vec.setListObj(results, 12, rzig.vec.asScalarVector(rzig.vec.getListObj(list.?, 10).?.isTypeOf(.NumericVector)));
-    rzig.vec.setListObj(results, 13, rzig.vec.asScalarVector(rzig.vec.getListObj(list.?, 11).?.isTypeOf(.ComplexVector)));
-    rzig.vec.setListObj(results, 14, rzig.vec.asScalarVector(rzig.vec.getListObj(list.?, 12).?.isTypeOf(.Expression)));
-    rzig.vec.setListObj(results, 15, rzig.vec.asScalarVector(char_vec.?.isTypeOf(.CharacterVector)));
-    rzig.vec.setListObj(results, 16, rzig.vec.asScalarVector(ext_ptr.?.isTypeOf(.ExternalPointer)));
+    results.?.setListObj(0, rzig.vec.asScalarVector(list.?.isTypeOf(.List)));
+    results.?.setListObj(1, rzig.vec.asScalarVector(r_null.*.?.isTypeOf(.NULL)));
+    results.?.setListObj(2, rzig.vec.asScalarVector(list.?.getListObj(0).?.isTypeOf(.Symbol)));
+    results.?.setListObj(3, rzig.vec.asScalarVector(list.?.getListObj(1).?.isTypeOf(.Pairlist)));
+    results.?.setListObj(4, rzig.vec.asScalarVector(list.?.getListObj(2).?.isTypeOf(.Closure)));
+    results.?.setListObj(5, rzig.vec.asScalarVector(list.?.getListObj(3).?.isTypeOf(.Environment)));
+    results.?.setListObj(6, rzig.vec.asScalarVector(list.?.getListObj(4).?.isTypeOf(.LanguageObject)));
+    results.?.setListObj(7, rzig.vec.asScalarVector(list.?.getListObj(5).?.isTypeOf(.SpecialFunction)));
+    results.?.setListObj(8, rzig.vec.asScalarVector(list.?.getListObj(6).?.isTypeOf(.BuiltinFunction)));
+    results.?.setListObj(9, rzig.vec.asScalarVector(string_obj.?.isTypeOf(.String)));
+    results.?.setListObj(10, rzig.vec.asScalarVector(list.?.getListObj(8).?.isTypeOf(.LogicalVector)));
+    results.?.setListObj(11, rzig.vec.asScalarVector(list.?.getListObj(9).?.isTypeOf(.IntegerVector)));
+    results.?.setListObj(12, rzig.vec.asScalarVector(list.?.getListObj(10).?.isTypeOf(.NumericVector)));
+    results.?.setListObj(13, rzig.vec.asScalarVector(list.?.getListObj(11).?.isTypeOf(.ComplexVector)));
+    results.?.setListObj(14, rzig.vec.asScalarVector(list.?.getListObj(12).?.isTypeOf(.Expression)));
+    results.?.setListObj(15, rzig.vec.asScalarVector(char_vec.?.isTypeOf(.CharacterVector)));
+    results.?.setListObj(16, rzig.vec.asScalarVector(ext_ptr.?.isTypeOf(.ExternalPointer)));
 
     return results;
+}
+
+export fn testAsScalarVector() Robject {
+    const results = rzig.vec.allocVector(.List, 23).?.protect();
+    defer rzig.gc.protect_stack.unprotectAll();
+
+    results.?.setListObj(0, rzig.vec.asScalarVector(@as(f32, 1.32456e+32)));
+    results.?.setListObj(1, rzig.vec.asScalarVector(@as(f32, -9.87123e-32)));
+    results.?.setListObj(2, rzig.vec.asScalarVector(math.inf(f32)));
+    results.?.setListObj(3, rzig.vec.asScalarVector(-math.inf(f32)));
+    results.?.setListObj(4, rzig.vec.asScalarVector(math.nan(f32)));
+
+    results.?.setListObj(5, rzig.vec.asScalarVector(@as(f64, -9.1e+300)));
+    results.?.setListObj(6, rzig.vec.asScalarVector(@as(f64, 1.2e-300)));
+    results.?.setListObj(7, rzig.vec.asScalarVector(math.inf(f64)));
+    results.?.setListObj(8, rzig.vec.asScalarVector(-math.inf(f64)));
+    results.?.setListObj(9, rzig.vec.asScalarVector(math.nan(f64)));
+
+    results.?.setListObj(10, rzig.vec.asScalarVector(-9.1e+307));
+    results.?.setListObj(11, rzig.vec.asScalarVector(1.2e-307));
+    results.?.setListObj(12, rzig.vec.asScalarVector(1.0e+500)); // Inf
+    results.?.setListObj(13, rzig.vec.asScalarVector(-1.0e+500)); // -Inf
+
+    results.?.setListObj(14, rzig.vec.asScalarVector(5));
+    results.?.setListObj(15, rzig.vec.asScalarVector(-5));
+    results.?.setListObj(16, rzig.vec.asScalarVector(@as(u32, 4)));
+    results.?.setListObj(17, rzig.vec.asScalarVector(@as(i32, -4)));
+    results.?.setListObj(18, rzig.vec.asScalarVector(@as(u0, 0)));
+    results.?.setListObj(19, rzig.vec.asScalarVector(@as(u150, 2_000_000_000)));
+    results.?.setListObj(20, rzig.vec.asScalarVector(@as(i150, -2_000_000_000)));
+    results.?.setListObj(21, rzig.vec.asScalarVector(true));
+    results.?.setListObj(22, rzig.vec.asScalarVector(false));
+
+    return results;
+}
+
+export fn testAsScalarVectorError() Robject {
+    _ = rzig.vec.asScalarVector(2_000_000_000_000);
+    unreachable;
 }

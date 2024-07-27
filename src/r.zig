@@ -9,6 +9,7 @@ const rzig = @import("Rzig.zig");
 // private types
 const Rtype = rzig.Rtype;
 const Encoding = rzig.strings.Encoding;
+const Robject = rzig.Robject;
 
 // types
 pub const Sexprec = opaque {
@@ -48,6 +49,24 @@ pub const Sexprec = opaque {
 
     pub fn isUnOrdered(self: *Self) bool {
         return Rf_isUnordered(self) == 1;
+    }
+
+    pub fn getListObj(self: *Self, index: usize) Robject {
+        if (self.isTypeOf(.List)) {
+            return rzig.vec.getListObj(self, index);
+        } else {
+            rzig.errors.stop("Expected `.List` object, found: {}", .{self.typeOf()});
+            unreachable;
+        }
+    }
+
+    pub fn setListObj(self: *Self, index: usize, what: Robject) void {
+        if (self.isTypeOf(.List)) {
+            rzig.vec.setListObj(self, index, what);
+        } else {
+            rzig.errors.stop("Expected `.List` object, found: {}", .{self.typeOf()});
+            unreachable;
+        }
     }
 };
 
