@@ -167,9 +167,9 @@ export fn testAllocateSomeVectors() Robject {
         val.* = 0;
     }
 
-    rzig.vec.setListObj(list, 0, numeric);
-    rzig.vec.setListObj(list, 1, ints);
-    rzig.vec.setListObj(list, 2, logicals);
+    list.?.setListObj(0, numeric);
+    list.?.setListObj(1, ints);
+    list.?.setListObj(2, logicals);
 
     return list;
 }

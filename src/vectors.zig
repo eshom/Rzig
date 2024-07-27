@@ -109,7 +109,7 @@ pub fn setListObj(list: Robject, index: usize, what: Robject) void {
 /// bool type is not supported, as you can't cast []c_int to []bool.
 /// For bools use `getListObj()` and unwrap it with either `toBoolSlice()` or `toU32SliceFromLogical()`.
 pub fn getListElem(T: type, list: Robject, index: usize) []T {
-    return toSlice(T, getListObj(list, index));
+    return toSlice(T, list.?.getListObj(index));
 }
 
 fn logicalToBool(v: c_int) bool {
