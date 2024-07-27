@@ -1,6 +1,7 @@
 const std = @import("std");
 const math = std.math;
 const mem = std.mem;
+const testing = std.testing;
 
 const r = @import("r.zig");
 const rzig = @import("Rzig.zig");
@@ -141,7 +142,7 @@ pub fn asPrimitive(T: type, from: Robject) T {
 }
 
 /// Convert R object to underlying primitive type slice
-/// Supported types: c_int, i32, f64, Rcomplex
+/// Supported types: c_int, i32, f64
 ///
 /// For bools, use either `toBoolSlice()` or `toU32SliceFromLogical()`
 pub fn toSlice(T: type, from: Robject) []T {
@@ -156,7 +157,6 @@ pub fn toSlice(T: type, from: Robject) []T {
         c_int => r.INTEGER(from)[0..len],
         i32 => @ptrCast(r.INTEGER(from)[0..len]),
         f64 => r.REAL(from)[0..len],
-        Rcomplex => r.COMPLEX(from)[0..len],
         bool => @compileError("Cannot directly cast []c_int to []bool. Use either `toBoolSlice()` or `toU32SliceFromLogical()`"),
         else => @compileError("Coercsion is not supported for specified type"),
     };
@@ -202,10 +202,24 @@ pub fn toU32SliceFromLogical(obj: Robject) []u32 {
 pub fn asScalarVector(from: anytype) Robject {
     const T = @TypeOf(from);
 
+    //TODO: Handle arbitrary sized integers
     const out = switch (T) {
         f64 => r.Rf_ScalarReal(from),
         bool => r.Rf_ScalarLogical(@intCast(@intFromBool(from))),
-        c_int, i32, comptime_int => r.Rf_ScalarInteger(@intCast(from)),
+        c_int, i32 => r.Rf_ScalarInteger(@intCast(from)),
+        i64, u64, isize, usize, comptime_int => out: {
+            if (from > math.maxInt(c_int)) {
+                errors.stop("Number is larger than 32-bit integer can represent. Max: {d}, found: {d}", .{ math.maxInt(c_int), from });
+                unreachable;
+            }
+
+            if (from < math.minInt(c_int)) {
+                errors.stop("Number is smaller than 32-bit integer can represent. Min: {d}, found: {d}", .{ math.minInt(c_int), from });
+                unreachable;
+            }
+
+            break :out r.Rf_ScalarInteger(@intCast(from));
+        },
         else => @compileError("Attempting to coerce unsupported type"),
     };
 

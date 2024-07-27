@@ -52,6 +52,7 @@ pub const Sexprec = opaque {
 };
 
 pub const Rcomplex = opaque {};
+pub const RcomplexPtr = ?*anyopaque;
 pub const Rbool = c_uint;
 pub const Rbyte = u8;
 pub const Sexp = ?*Sexprec;
@@ -207,7 +208,7 @@ pub extern fn LOGICAL(x: Sexp) [*c]c_int;
 pub extern fn INTEGER(x: Sexp) [*c]c_int;
 pub extern fn RAW(x: Sexp) [*c]Rbyte;
 pub extern fn REAL(x: Sexp) [*c]f64;
-pub extern fn COMPLEX(x: Sexp) [*c]Rcomplex;
+pub extern fn COMPLEX(x: Sexp) RcomplexPtr;
 pub extern fn VECTOR_ELT(x: Sexp, i: c_long) Sexp;
 pub extern fn SET_VECTOR_ELT(x: Sexp, i: c_long, v: Sexp) Sexp;
 pub extern fn STRING_ELT(x: Sexp, i: c_long) Sexp;
