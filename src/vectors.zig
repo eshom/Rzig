@@ -109,7 +109,7 @@ pub fn setListObj(list: Robject, index: usize, what: Robject) void {
 /// bool type is not supported, as you can't cast []c_int to []bool.
 /// For bools use `getListObj()` and unwrap it with either `toBoolSlice()` or `toU32SliceFromLogical()`.
 pub fn getListElem(T: type, list: Robject, index: usize) []T {
-    return toSlice(T, list.?.getListObj(index));
+    return toSlice(T, list.getListObj(index));
 }
 
 fn logicalToBool(v: c_int) bool {
@@ -126,7 +126,7 @@ fn logicalToBool(v: c_int) bool {
 /// `from` must be an R vector otherwise `NotAVector` error is returned.
 /// Vectors with length greater than 1 return only their first element.
 pub fn asPrimitive(T: type, from: Robject) T {
-    if (!from.?.isVector()) {
+    if (!from.isVector()) {
         errors.stop("Object to coerce must be a vector", .{});
         unreachable;
     }
@@ -147,7 +147,7 @@ pub fn asPrimitive(T: type, from: Robject) T {
 ///
 /// For bools, use either `toBoolSlice()` or `toU32SliceFromLogical()`
 pub fn toSlice(T: type, from: Robject) []T {
-    if (!from.?.isVector()) {
+    if (!from.isVector()) {
         errors.stop("Object to coerce must be a vector", .{});
         unreachable;
     }
@@ -169,7 +169,7 @@ pub fn toSlice(T: type, from: Robject) []T {
 ///
 /// Depending on the allocator used, caller or R's GC must free memory.
 pub fn toBoolSlice(allocator: Allocator, obj: Robject) []bool {
-    if (!obj.?.isTypeOf(.LogicalVector)) {
+    if (!obj.isTypeOf(.LogicalVector)) {
         errors.stop("Object passed must be a logical vector.", .{});
         unreachable;
     }
@@ -190,7 +190,7 @@ pub fn toBoolSlice(allocator: Allocator, obj: Robject) []bool {
 
 /// Convert R logical vector to underlying primitive type slice.
 pub fn toU32SliceFromLogical(obj: Robject) []u32 {
-    if (!obj.?.isTypeOf(.LogicalVector)) {
+    if (!obj.isTypeOf(.LogicalVector)) {
         errors.stop("Object passed must be a logical vector.", .{});
         unreachable;
     }

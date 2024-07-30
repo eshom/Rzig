@@ -150,10 +150,10 @@ export fn testPrintValue(expr: Robject, envir: Robject) Robject {
 export fn testAllocateSomeVectors() Robject {
     defer rzig.gc.protect_stack.unprotectAll();
 
-    const list = rzig.vec.allocVector(.List, 3).?.protect();
-    const numeric = rzig.vec.allocVector(.NumericVector, 3).?.protect();
-    const ints = rzig.vec.allocVector(.IntegerVector, 3).?.protect();
-    const logicals = rzig.vec.allocVector(.LogicalVector, 3).?.protect();
+    const list = rzig.vec.allocVector(.List, 3).protect();
+    const numeric = rzig.vec.allocVector(.NumericVector, 3).protect();
+    const ints = rzig.vec.allocVector(.IntegerVector, 3).protect();
+    const logicals = rzig.vec.allocVector(.LogicalVector, 3).protect();
 
     for (rzig.vec.toSlice(f64, numeric)) |*val| {
         val.* = 0.5;
@@ -167,9 +167,9 @@ export fn testAllocateSomeVectors() Robject {
         val.* = 0;
     }
 
-    list.?.setListObj(0, numeric);
-    list.?.setListObj(1, ints);
-    list.?.setListObj(2, logicals);
+    list.setListObj(0, numeric);
+    list.setListObj(1, ints);
+    list.setListObj(2, logicals);
 
     return list;
 }
@@ -180,7 +180,7 @@ export fn testIsObjects(list: Robject) Robject {
     // .Tripledot
     // .Any, although it might not be supported as part of the official API.
     // .Bytecode
-    const results = rzig.vec.allocVector(.List, 17).?.protect();
+    const results = rzig.vec.allocVector(.List, 17).protect();
     defer rzig.gc.protect_stack.unprotectAll();
 
     const char_vec = rzig.vec.getListObj(list, 7);
@@ -188,57 +188,57 @@ export fn testIsObjects(list: Robject) Robject {
 
     const ext_ptr = rzig.pointers.makeExternalPtr(@ptrCast(@constCast(&string_obj)), r_null.*, r_null.*);
 
-    results.?.setListObj(0, rzig.vec.asScalarVector(list.?.isTypeOf(.List)));
-    results.?.setListObj(1, rzig.vec.asScalarVector(r_null.*.?.isTypeOf(.NULL)));
-    results.?.setListObj(2, rzig.vec.asScalarVector(list.?.getListObj(0).?.isTypeOf(.Symbol)));
-    results.?.setListObj(3, rzig.vec.asScalarVector(list.?.getListObj(1).?.isTypeOf(.Pairlist)));
-    results.?.setListObj(4, rzig.vec.asScalarVector(list.?.getListObj(2).?.isTypeOf(.Closure)));
-    results.?.setListObj(5, rzig.vec.asScalarVector(list.?.getListObj(3).?.isTypeOf(.Environment)));
-    results.?.setListObj(6, rzig.vec.asScalarVector(list.?.getListObj(4).?.isTypeOf(.LanguageObject)));
-    results.?.setListObj(7, rzig.vec.asScalarVector(list.?.getListObj(5).?.isTypeOf(.SpecialFunction)));
-    results.?.setListObj(8, rzig.vec.asScalarVector(list.?.getListObj(6).?.isTypeOf(.BuiltinFunction)));
-    results.?.setListObj(9, rzig.vec.asScalarVector(string_obj.?.isTypeOf(.String)));
-    results.?.setListObj(10, rzig.vec.asScalarVector(list.?.getListObj(8).?.isTypeOf(.LogicalVector)));
-    results.?.setListObj(11, rzig.vec.asScalarVector(list.?.getListObj(9).?.isTypeOf(.IntegerVector)));
-    results.?.setListObj(12, rzig.vec.asScalarVector(list.?.getListObj(10).?.isTypeOf(.NumericVector)));
-    results.?.setListObj(13, rzig.vec.asScalarVector(list.?.getListObj(11).?.isTypeOf(.ComplexVector)));
-    results.?.setListObj(14, rzig.vec.asScalarVector(list.?.getListObj(12).?.isTypeOf(.Expression)));
-    results.?.setListObj(15, rzig.vec.asScalarVector(char_vec.?.isTypeOf(.CharacterVector)));
-    results.?.setListObj(16, rzig.vec.asScalarVector(ext_ptr.?.isTypeOf(.ExternalPointer)));
+    results.setListObj(0, rzig.vec.asScalarVector(list.isTypeOf(.List)));
+    results.setListObj(1, rzig.vec.asScalarVector(r_null.*.isTypeOf(.NULL)));
+    results.setListObj(2, rzig.vec.asScalarVector(list.getListObj(0).isTypeOf(.Symbol)));
+    results.setListObj(3, rzig.vec.asScalarVector(list.getListObj(1).isTypeOf(.Pairlist)));
+    results.setListObj(4, rzig.vec.asScalarVector(list.getListObj(2).isTypeOf(.Closure)));
+    results.setListObj(5, rzig.vec.asScalarVector(list.getListObj(3).isTypeOf(.Environment)));
+    results.setListObj(6, rzig.vec.asScalarVector(list.getListObj(4).isTypeOf(.LanguageObject)));
+    results.setListObj(7, rzig.vec.asScalarVector(list.getListObj(5).isTypeOf(.SpecialFunction)));
+    results.setListObj(8, rzig.vec.asScalarVector(list.getListObj(6).isTypeOf(.BuiltinFunction)));
+    results.setListObj(9, rzig.vec.asScalarVector(string_obj.isTypeOf(.String)));
+    results.setListObj(10, rzig.vec.asScalarVector(list.getListObj(8).isTypeOf(.LogicalVector)));
+    results.setListObj(11, rzig.vec.asScalarVector(list.getListObj(9).isTypeOf(.IntegerVector)));
+    results.setListObj(12, rzig.vec.asScalarVector(list.getListObj(10).isTypeOf(.NumericVector)));
+    results.setListObj(13, rzig.vec.asScalarVector(list.getListObj(11).isTypeOf(.ComplexVector)));
+    results.setListObj(14, rzig.vec.asScalarVector(list.getListObj(12).isTypeOf(.Expression)));
+    results.setListObj(15, rzig.vec.asScalarVector(char_vec.isTypeOf(.CharacterVector)));
+    results.setListObj(16, rzig.vec.asScalarVector(ext_ptr.isTypeOf(.ExternalPointer)));
 
     return results;
 }
 
 export fn testAsScalarVector() Robject {
-    const results = rzig.vec.allocVector(.List, 23).?.protect();
+    const results = rzig.vec.allocVector(.List, 23).protect();
     defer rzig.gc.protect_stack.unprotectAll();
 
-    results.?.setListObj(0, rzig.vec.asScalarVector(@as(f32, 1.32456e+32)));
-    results.?.setListObj(1, rzig.vec.asScalarVector(@as(f32, -9.87123e-32)));
-    results.?.setListObj(2, rzig.vec.asScalarVector(math.inf(f32)));
-    results.?.setListObj(3, rzig.vec.asScalarVector(-math.inf(f32)));
-    results.?.setListObj(4, rzig.vec.asScalarVector(math.nan(f32)));
+    results.setListObj(0, rzig.vec.asScalarVector(@as(f32, 1.32456e+32)));
+    results.setListObj(1, rzig.vec.asScalarVector(@as(f32, -9.87123e-32)));
+    results.setListObj(2, rzig.vec.asScalarVector(math.inf(f32)));
+    results.setListObj(3, rzig.vec.asScalarVector(-math.inf(f32)));
+    results.setListObj(4, rzig.vec.asScalarVector(math.nan(f32)));
 
-    results.?.setListObj(5, rzig.vec.asScalarVector(@as(f64, -9.1e+300)));
-    results.?.setListObj(6, rzig.vec.asScalarVector(@as(f64, 1.2e-300)));
-    results.?.setListObj(7, rzig.vec.asScalarVector(math.inf(f64)));
-    results.?.setListObj(8, rzig.vec.asScalarVector(-math.inf(f64)));
-    results.?.setListObj(9, rzig.vec.asScalarVector(math.nan(f64)));
+    results.setListObj(5, rzig.vec.asScalarVector(@as(f64, -9.1e+300)));
+    results.setListObj(6, rzig.vec.asScalarVector(@as(f64, 1.2e-300)));
+    results.setListObj(7, rzig.vec.asScalarVector(math.inf(f64)));
+    results.setListObj(8, rzig.vec.asScalarVector(-math.inf(f64)));
+    results.setListObj(9, rzig.vec.asScalarVector(math.nan(f64)));
 
-    results.?.setListObj(10, rzig.vec.asScalarVector(-9.1e+307));
-    results.?.setListObj(11, rzig.vec.asScalarVector(1.2e-307));
-    results.?.setListObj(12, rzig.vec.asScalarVector(1.0e+500)); // Inf
-    results.?.setListObj(13, rzig.vec.asScalarVector(-1.0e+500)); // -Inf
+    results.setListObj(10, rzig.vec.asScalarVector(-9.1e+307));
+    results.setListObj(11, rzig.vec.asScalarVector(1.2e-307));
+    results.setListObj(12, rzig.vec.asScalarVector(1.0e+500)); // Inf
+    results.setListObj(13, rzig.vec.asScalarVector(-1.0e+500)); // -Inf
 
-    results.?.setListObj(14, rzig.vec.asScalarVector(5));
-    results.?.setListObj(15, rzig.vec.asScalarVector(-5));
-    results.?.setListObj(16, rzig.vec.asScalarVector(@as(u32, 4)));
-    results.?.setListObj(17, rzig.vec.asScalarVector(@as(i32, -4)));
-    results.?.setListObj(18, rzig.vec.asScalarVector(@as(u0, 0)));
-    results.?.setListObj(19, rzig.vec.asScalarVector(@as(u150, 2_000_000_000)));
-    results.?.setListObj(20, rzig.vec.asScalarVector(@as(i150, -2_000_000_000)));
-    results.?.setListObj(21, rzig.vec.asScalarVector(true));
-    results.?.setListObj(22, rzig.vec.asScalarVector(false));
+    results.setListObj(14, rzig.vec.asScalarVector(5));
+    results.setListObj(15, rzig.vec.asScalarVector(-5));
+    results.setListObj(16, rzig.vec.asScalarVector(@as(u32, 4)));
+    results.setListObj(17, rzig.vec.asScalarVector(@as(i32, -4)));
+    results.setListObj(18, rzig.vec.asScalarVector(@as(u0, 0)));
+    results.setListObj(19, rzig.vec.asScalarVector(@as(u150, 2_000_000_000)));
+    results.setListObj(20, rzig.vec.asScalarVector(@as(i150, -2_000_000_000)));
+    results.setListObj(21, rzig.vec.asScalarVector(true));
+    results.setListObj(22, rzig.vec.asScalarVector(false));
 
     return results;
 }

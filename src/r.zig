@@ -15,7 +15,7 @@ const Robject = rzig.Robject;
 pub const Sexprec = opaque {
     const Self = @This();
     /// Protect object from R's GC
-    pub fn protect(self: *Self) ?*Self {
+    pub fn protect(self: *Self) *Self {
         return rzig.gc.protect_stack.protectSafe(self) catch |e| {
             rzig.errors.stop("Failed to protect object. Caught {!}", .{e});
             unreachable;
@@ -74,7 +74,7 @@ pub const Rcomplex = opaque {};
 pub const RcomplexPtr = ?*anyopaque;
 pub const Rbool = c_uint;
 pub const Rbyte = u8;
-pub const Sexp = ?*Sexprec;
+pub const Sexp = *Sexprec;
 pub const R_allocator_t = opaque {};
 pub const SexpType = c_uint;
 pub const Anyfn = ?*const fn () callconv(.C) ?*anyopaque;

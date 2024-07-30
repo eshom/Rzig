@@ -41,6 +41,10 @@ test {
 
 /// General purpose R object (SEXP).
 /// Must use R API functions to access values and coerce to other types.
+///
+/// Public API functions should never return NULL except for 2 known cases:
+/// `R_tryEval()` and `R_tryEvalSilent()`.
+/// If you encounter a NULL pointer sneaking out of any other API function it is a bug.
 pub const Robject = r.Sexp;
 
 pub const Rcomplex = r.Rcomplex;

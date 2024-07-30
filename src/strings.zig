@@ -24,7 +24,7 @@ pub const Encoding = enum(c_uint) {
 
 /// Get encoding from internal C string object
 pub fn getEncoding(obj: Robject) Encoding {
-    if (!obj.?.isTypeOf(.String)) {
+    if (!obj.isTypeOf(.String)) {
         errors.stop("Cannot get encoding from non-string object");
     }
     return @enumFromInt(r.Rf_getCharCE(obj));
@@ -53,7 +53,7 @@ pub fn makeStringEncoding(str: []const u8, encoding: Encoding) Robject {
 }
 
 pub fn getString(char_vec: Robject, index: usize) Robject {
-    if (!char_vec.?.isTypeOf(.CharacterVector)) {
+    if (!char_vec.isTypeOf(.CharacterVector)) {
         errors.stop("Cannot get string object from non-character vector", .{});
     }
 
@@ -67,11 +67,11 @@ pub fn getString(char_vec: Robject, index: usize) Robject {
 }
 
 pub fn setString(char_vec: Robject, index: usize, string_obj: Robject) Robject {
-    if (!char_vec.?.isTypeOf(.CharacterVector)) {
+    if (!char_vec.isTypeOf(.CharacterVector)) {
         errors.stop("Cannot get string object from non-character vector");
     }
 
-    if (!string_obj.?.isTypeOf(.String)) {
+    if (!string_obj.isTypeOf(.String)) {
         errors.stop("Cannot assign non-string to character vector");
     }
 
