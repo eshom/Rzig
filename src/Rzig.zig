@@ -1,6 +1,7 @@
 //! References:
 //!     https://cran.r-project.org/doc/manuals/R-ints.html
 //!     https://cran.r-project.org/doc/manuals/R-exts.html
+//!     https://aitap.codeberg.page/R-api
 
 const r = @import("r.zig");
 

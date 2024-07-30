@@ -79,6 +79,10 @@ pub const R_allocator_t = opaque {};
 pub const SexpType = c_uint;
 pub const Anyfn = ?*const fn () callconv(.C) ?*anyopaque;
 pub const AnyfnVoid = ?*const fn () callconv(.C) void;
+pub const Rboolean = enum(c_int) {
+    FALSE,
+    TRUE,
+};
 
 // constants and external variables/constants
 pub const BUFSIZE = 8192;
@@ -325,5 +329,8 @@ pub extern fn R_ExternalPtrAddr(s: Sexp) ?*anyopaque;
 pub extern fn R_MakeExternalPtrFn(p: Anyfn, tag: Sexp, prot: Sexp) Sexp;
 pub extern fn R_ExternalPtrAddrFn(s: Sexp) Anyfn;
 
-// Others
+// Eval
 pub extern fn Rf_eval(Sexp, Sexp) Sexp;
+pub extern fn R_tryEval(Sexp, Sexp, [*c]c_int) ?Sexp;
+pub extern fn R_tryEvalSilent(Sexp, Sexp, [*c]c_int) ?Sexp;
+pub extern fn R_ToplevelExec(fun: ?*const fn (?*anyopaque) callconv(.C) void, data: ?*anyopaque) Rboolean;
