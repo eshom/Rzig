@@ -24,7 +24,6 @@ pub fn makeExternalPtr(ptr: ?*anyopaque, tag: Robject, prot: Robject) Robject {
         return r.R_MakeExternalPtr(p, tag, prot);
     } else {
         errors.stop("Trying to make an external pointer with null address", .{});
-        unreachable;
     }
 }
 
@@ -34,7 +33,6 @@ pub fn externalPtrAddr(obj: Robject) ?*anyopaque {
         return r.R_ExternalPtrAddr(obj);
     } else {
         errors.stop("Expected external pointer, found: {any}", .{obj.?.typeOf()});
-        unreachable;
     }
 }
 
@@ -51,7 +49,6 @@ pub fn makeExternalPtrFn(fn_ptr: Anyfn, tag: Robject, prot: Robject) Robject {
         return r.R_MakeExternalPtrFn(p, tag, prot);
     } else {
         errors.stop("Trying to make an external pointer to a function with null address. {}");
-        unreachable;
     }
 }
 
@@ -61,6 +58,5 @@ pub fn externalPtrAddrFn(obj: Robject) Anyfn {
         return r.R_ExternalPtrAddrFn(obj);
     } else {
         errors.stop("Expected external pointer, found: {any}", .{obj.?.typeOf()});
-        unreachable;
     }
 }

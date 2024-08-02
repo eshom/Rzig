@@ -48,7 +48,6 @@ pub fn resizeVec(obj: Robject, new_len: usize) Robject {
 
     if (len > new_len) {
         errors.stop("Cannot enlarge vector. Only shrinking is supported.");
-        unreachable;
     }
 
     return r.Rf_xlengthgets(obj, @intCast(new_len));
@@ -61,12 +60,10 @@ pub fn resizeVec32(obj: Robject, new_len: usize) Robject {
 
     if (len > new_len) {
         errors.stop("Cannot enlarge vector. Only shrinking is supported.");
-        unreachable;
     }
 
     if (len > math.maxInt(c_int)) {
         errors.stop("Trying to resize 64-bit vector with 32-bit version. Use `resizeVec()` instead.");
-        unreachable;
     }
 
     return r.Rf_lengthgets(obj, @intCast(new_len));
@@ -128,7 +125,6 @@ fn logicalToBool(v: c_int) bool {
 pub fn asPrimitive(T: type, from: Robject) T {
     if (!from.isVector()) {
         errors.stop("Object to coerce must be a vector", .{});
-        unreachable;
     }
 
     const out: T = switch (T) {
@@ -149,7 +145,6 @@ pub fn asPrimitive(T: type, from: Robject) T {
 pub fn toSlice(T: type, from: Robject) []T {
     if (!from.isVector()) {
         errors.stop("Object to coerce must be a vector", .{});
-        unreachable;
     }
 
     const len = length(from);
@@ -171,13 +166,11 @@ pub fn toSlice(T: type, from: Robject) []T {
 pub fn toBoolSlice(allocator: Allocator, obj: Robject) []bool {
     if (!obj.isTypeOf(.LogicalVector)) {
         errors.stop("Object passed must be a logical vector.", .{});
-        unreachable;
     }
 
     const len = length(obj);
     const out = allocator.alloc(bool, len) catch {
         errors.stop("Failed allocation. Out of memory.", .{});
-        unreachable;
     };
     const src: []c_int = r.LOGICAL(obj)[0..len];
 
@@ -192,7 +185,6 @@ pub fn toBoolSlice(allocator: Allocator, obj: Robject) []bool {
 pub fn toU32SliceFromLogical(obj: Robject) []u32 {
     if (!obj.isTypeOf(.LogicalVector)) {
         errors.stop("Object passed must be a logical vector.", .{});
-        unreachable;
     }
 
     const len = length(obj);
@@ -215,12 +207,10 @@ pub fn asScalarVector(from: anytype) Robject {
                 .Int, .ComptimeInt => {
                     if (from > math.maxInt(c_int)) {
                         errors.stop("Number is larger than 32-bit integer can represent. Max: {d}, found: {d}", .{ math.maxInt(c_int), from });
-                        unreachable;
                     }
 
                     if (from < math.minInt(c_int)) {
                         errors.stop("Number is smaller than 32-bit integer can represent. Min: {d}, found: {d}", .{ math.minInt(c_int), from });
-                        unreachable;
                     }
 
                     break :blk r.Rf_ScalarInteger(@intCast(from));

@@ -18,7 +18,6 @@ pub const Sexprec = opaque {
     pub fn protect(self: *Self) *Self {
         return rzig.gc.protect_stack.protectSafe(self) catch |e| {
             rzig.errors.stop("Failed to protect object. Caught {!}", .{e});
-            unreachable;
         };
     }
 
@@ -56,7 +55,6 @@ pub const Sexprec = opaque {
             return rzig.vec.getListObj(self, index);
         } else {
             rzig.errors.stop("Expected `.List` object, found: {}", .{self.typeOf()});
-            unreachable;
         }
     }
 
@@ -65,7 +63,6 @@ pub const Sexprec = opaque {
             rzig.vec.setListObj(self, index, what);
         } else {
             rzig.errors.stop("Expected `.List` object, found: {}", .{self.typeOf()});
-            unreachable;
         }
     }
 };
@@ -252,8 +249,8 @@ pub extern fn R_ShowMessage(s: [*c]const u8) void;
 
 // Errors
 pub extern fn Rf_warning([*c]const u8, ...) void;
-pub extern fn Rf_error([*c]const u8, ...) void;
-pub extern fn Rf_errorcall(Sexp, [*c]const u8, ...) void;
+pub extern fn Rf_error([*c]const u8, ...) noreturn;
+pub extern fn Rf_errorcall(Sexp, [*c]const u8, ...) noreturn;
 pub extern fn Rf_warningcall(Sexp, [*c]const u8, ...) void;
 pub extern fn Rf_warningcall_immediate(Sexp, [*c]const u8, ...) void;
 
