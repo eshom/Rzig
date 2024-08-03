@@ -181,10 +181,22 @@ test "asVector" {
 ///
 /// Return value does not need to be protected from GC.
 pub fn getListObj(list: Robject, index: usize) Robject {
+    const rtype = list.typeOf();
+
+    if (rtype != .List) {
+        errors.stop("Unexpected object. Expected `.List`, found {any}", .{rtype});
+    }
+
     return r.VECTOR_ELT(list, @intCast(index));
 }
 
 pub fn setListObj(list: Robject, index: usize, what: Robject) void {
+    const rtype = list.typeOf();
+
+    if (rtype != .List) {
+        errors.stop("Unexpected object. Expected `.List`, found {any}", .{rtype});
+    }
+
     _ = r.SET_VECTOR_ELT(list, @intCast(index), what);
 }
 
@@ -193,7 +205,46 @@ pub fn setListObj(list: Robject, index: usize, what: Robject) void {
 /// bool type is not supported, as you can't cast []c_int to []bool.
 /// For bools use `getListObj()` and unwrap it with either `toBoolSlice()` or `toU32SliceFromLogical()`.
 pub fn getListElem(T: type, list: Robject, index: usize) []T {
+    const rtype = list.typeOf();
+
+    if (rtype != .List) {
+        errors.stop("Unexpected object. Expected `.List`, found {any}", .{rtype});
+    }
+
     return list.getListObj(index).toSlice(T);
+}
+
+test "getListElem" {
+    const code =
+        \\dyn.load('zig-out/tests/lib/libRtests.so')
+        \\obj <- list(1:10)
+        \\.Call('testGetListElem', obj)
+    ;
+
+    const result = try std.process.Child.run(.{
+        .allocator = testing.allocator,
+        .argv = &.{
+            "Rscript",
+            "--vanilla",
+            "-e",
+            code,
+        },
+    });
+
+    defer testing.allocator.free(result.stdout);
+    defer testing.allocator.free(result.stderr);
+
+    const expected =
+        \\ [1]  2  4  6  8 10 12 14 16 18 20
+        \\
+    ;
+
+    testing.expectEqualStrings(expected, result.stdout) catch |err| {
+        std.debug.print("stderr:\n{s}\n", .{result.stderr});
+        return err;
+    };
+
+    try testing.expectEqualStrings("", result.stderr);
 }
 
 fn logicalToBool(v: c_int) bool {

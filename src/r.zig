@@ -26,6 +26,9 @@ pub const Sexprec = opaque {
         rzig.gc.protect_stack.unprotectOnce();
     }
 
+    // ------------
+    // -- Common --
+    // ------------
     pub fn isVector(self: *Self) bool {
         const bit: u1 = @intCast(Rf_isVector(self));
         return @bitCast(bit);
@@ -46,22 +49,6 @@ pub const Sexprec = opaque {
 
     pub fn isUnOrdered(self: *Self) bool {
         return Rf_isUnordered(self) == 1;
-    }
-
-    pub fn getListObj(self: *Self, index: usize) Robject {
-        if (self.isTypeOf(.List)) {
-            return rzig.vec.getListObj(self, index);
-        } else {
-            rzig.errors.stop("Expected `.List` object, found: {}", .{self.typeOf()});
-        }
-    }
-
-    pub fn setListObj(self: *Self, index: usize, what: Robject) void {
-        if (self.isTypeOf(.List)) {
-            rzig.vec.setListObj(self, index, what);
-        } else {
-            rzig.errors.stop("Expected `.List` object, found: {}", .{self.typeOf()});
-        }
     }
 
     pub fn length(self: *Self) usize {
@@ -94,6 +81,21 @@ pub const Sexprec = opaque {
 
     pub fn asVector(self: *Self, to: Rtype) Robject {
         return rzig.vec.asVector(to, self);
+    }
+
+    // ------------
+    // --- List ---
+    // ------------
+    pub fn getListObj(self: *Self, index: usize) Robject {
+        return rzig.vec.getListObj(self, index);
+    }
+
+    pub fn setListObj(self: *Self, index: usize, what: Robject) void {
+        rzig.vec.setListObj(self, index, what);
+    }
+
+    pub fn getListElem(self: *Self, T: type, index: usize) []T {
+        return rzig.vec.getListElem(T, self, index);
     }
 };
 

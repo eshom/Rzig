@@ -175,7 +175,7 @@ export fn testIsObjects(list: Robject) Robject {
     const results = rzig.vec.allocVector(.List, 19).protect();
     defer rzig.gc.protect_stack.unprotectAll();
 
-    const char_vec = rzig.vec.getListObj(list, 7);
+    const char_vec = list.getListObj(7);
     const string_obj = rzig.strings.getString(char_vec, 0);
 
     const ext_ptr = rzig.pointers.makeExternalPtr(@ptrCast(@constCast(&string_obj)), r_null.*, r_null.*);
@@ -285,4 +285,21 @@ export fn testAsVector() Robject {
     result.setListObj(1, integer);
 
     return result;
+}
+
+export fn testGetListElem(list: Robject) Robject {
+    const nums = list.getListElem(i32, 0);
+    // for (nums) |val| {
+    //     val.* *= 2;
+    // }
+
+    const out = rzig.vec.allocVector(.IntegerVector, nums.len).protect();
+    defer out.unprotect();
+    const out_slc = out.toSlice(i32);
+
+    for (out_slc, nums) |*dst, src| {
+        dst.* = src * 2;
+    }
+
+    return out;
 }
