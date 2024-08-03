@@ -94,6 +94,7 @@ pub fn build(b: *std.Build) !void {
         .root_source_file = b.path("src/Rzig.zig"),
         .target = target,
         .optimize = optimize,
+        .filter = b.option([]const u8, "test-filter", "String to filter tests by"),
     });
 
     // Include and Link R (pkg-config dependency)
