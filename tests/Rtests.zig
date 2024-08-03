@@ -171,7 +171,8 @@ export fn testIsObjects(list: Robject) Robject {
     // .Tripledot
     // .Any, although it might not be supported as part of the official API.
     // .Bytecode
-    const results = rzig.vec.allocVector(.List, 17).protect();
+    // .WeakReference
+    const results = rzig.vec.allocVector(.List, 19).protect();
     defer rzig.gc.protect_stack.unprotectAll();
 
     const char_vec = rzig.vec.getListObj(list, 7);
@@ -196,6 +197,8 @@ export fn testIsObjects(list: Robject) Robject {
     results.setListObj(14, rzig.vec.asScalarVector(list.getListObj(12).isTypeOf(.Expression)));
     results.setListObj(15, rzig.vec.asScalarVector(char_vec.isTypeOf(.CharacterVector)));
     results.setListObj(16, rzig.vec.asScalarVector(ext_ptr.isTypeOf(.ExternalPointer)));
+    results.setListObj(17, rzig.vec.asScalarVector(list.getListObj(13).isTypeOf(.RawVector)));
+    results.setListObj(18, rzig.vec.asScalarVector(list.getListObj(14).isTypeOf(.Object)));
 
     return results;
 }

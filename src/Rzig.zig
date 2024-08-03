@@ -126,6 +126,8 @@ test "R type checks" {
         \\obj[[11]] <- c(1.0, 1.1)
         \\obj[[12]] <- c(1i, 2i+1)
         \\obj[[13]] <- expression(1 + 1)
+        \\obj[[14]] <- as.raw(c(0x45, 0x00, 0x10, 0x50))
+        \\obj[[15]] <- (setClass("SimpleClass", slots = c(x = "numeric")))(x = 1)
         \\.Call('testIsObjects', obj)
     ;
 
@@ -192,6 +194,12 @@ test "R type checks" {
         \\[1] TRUE
         \\
         \\[[17]]
+        \\[1] TRUE
+        \\
+        \\[[18]]
+        \\[1] TRUE
+        \\
+        \\[[19]]
         \\[1] TRUE
         \\
         \\
