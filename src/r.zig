@@ -1,10 +1,7 @@
 const std = @import("std");
 const rzig = @import("Rzig.zig");
-// pub usingnamespace @cImport({
-//     @cDefine("R_NO_REMAP", {});
-//     @cInclude("R.h");
-//     @cInclude("Rinternals.h");
-// });
+
+const Allocator = std.mem.Allocator;
 
 // private types
 const Rtype = rzig.Rtype;
@@ -81,6 +78,18 @@ pub const Sexprec = opaque {
 
     pub fn resizeVec32(self: *Self, new_len: usize) Robject {
         return rzig.vec.resizeVec32(self, new_len);
+    }
+
+    pub fn toSlice(self: *Self, T: type) []T {
+        return rzig.vec.toSlice(T, self);
+    }
+
+    pub fn toBooSlice(self: *Self, allocator: Allocator) []bool {
+        return rzig.vec.toBoolSlice(allocator, self);
+    }
+
+    pub fn toU32SliceFromLogical(self: *Self) []u32 {
+        return rzig.vec.toU32SliceFromLogical(self);
     }
 };
 

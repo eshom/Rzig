@@ -45,9 +45,9 @@ pub fn length32(obj: Robject) usize {
 ///
 /// Caller must protect result object.
 pub fn resizeVec(obj: Robject, new_len: usize) Robject {
-    const t = obj.typeOf();
+    const rtype = obj.typeOf();
 
-    switch (t) {
+    switch (rtype) {
         .String,
         .LogicalVector,
         .IntegerVector,
@@ -58,7 +58,7 @@ pub fn resizeVec(obj: Robject, new_len: usize) Robject {
         .Expression,
         .RawVector,
         => return r.Rf_xlengthgets(obj, @intCast(new_len)),
-        else => errors.stop("Trying to resize unsupported type: {any}", .{t}),
+        else => errors.stop("Trying to resize unsupported type: {any}", .{rtype}),
     }
 }
 
@@ -66,13 +66,13 @@ pub fn resizeVec(obj: Robject, new_len: usize) Robject {
 /// See: `resizeVec()`
 pub fn resizeVec32(obj: Robject, new_len: usize) Robject {
     const len = obj.length();
-    const t = obj.typeOf();
+    const rtype = obj.typeOf();
 
     if (len > math.maxInt(c_int)) {
         errors.stop("Trying to resize 64-bit vector with 32-bit version. Use `resizeVec()` instead.");
     }
 
-    switch (t) {
+    switch (rtype) {
         .String,
         .LogicalVector,
         .IntegerVector,
@@ -83,7 +83,7 @@ pub fn resizeVec32(obj: Robject, new_len: usize) Robject {
         .Expression,
         .RawVector,
         => return r.Rf_lengthgets(obj, @intCast(new_len)),
-        else => errors.stop("Trying to resize unsupported type: {any}", .{t}),
+        else => errors.stop("Trying to resize unsupported type: {any}", .{rtype}),
     }
 }
 
@@ -156,7 +156,7 @@ pub fn setListObj(list: Robject, index: usize, what: Robject) void {
 /// bool type is not supported, as you can't cast []c_int to []bool.
 /// For bools use `getListObj()` and unwrap it with either `toBoolSlice()` or `toU32SliceFromLogical()`.
 pub fn getListElem(T: type, list: Robject, index: usize) []T {
-    return toSlice(T, list.getListObj(index));
+    return list.getListObj(index).toSlice(T);
 }
 
 fn logicalToBool(v: c_int) bool {
@@ -193,18 +193,18 @@ pub fn asPrimitive(T: type, from: Robject) T {
 ///
 /// For bools, use either `toBoolSlice()` or `toU32SliceFromLogical()`
 pub fn toSlice(T: type, from: Robject) []T {
-    if (!from.isVector()) {
-        errors.stop("Object to coerce must be a vector", .{});
-    }
-
+    const rtype = from.typeOf();
     const len = from.length();
 
-    const out: []T = switch (T) {
-        c_int => r.INTEGER(from)[0..len],
-        i32 => @ptrCast(r.INTEGER(from)[0..len]),
-        f64 => r.REAL(from)[0..len],
-        bool => @compileError("Cannot directly cast []c_int to []bool. Use either `toBoolSlice()` or `toU32SliceFromLogical()`"),
-        else => @compileError("Coercsion is not supported for specified type"),
+    const out: []T = switch (rtype) {
+        .IntegerVector, .NumericVector => switch (T) {
+            c_int => r.INTEGER(from)[0..len],
+            i32 => @ptrCast(r.INTEGER(from)[0..len]),
+            f64 => r.REAL(from)[0..len],
+            bool => @compileError("Cannot directly cast []c_int to []bool. Use either `toBoolSlice()` or `toU32SliceFromLogical()`"),
+            else => @compileError("Coercsion is not supported for specified type"),
+        },
+        else => errors.stop("Trying to get slice of unsupported object {any}", .{rtype}),
     };
 
     return out;

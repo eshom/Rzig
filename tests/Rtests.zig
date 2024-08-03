@@ -146,15 +146,15 @@ export fn testAllocateSomeVectors() Robject {
     const ints = rzig.vec.allocVector(.IntegerVector, 3).protect();
     const logicals = rzig.vec.allocVector(.LogicalVector, 3).protect();
 
-    for (rzig.vec.toSlice(f64, numeric)) |*val| {
+    for (numeric.toSlice(f64)) |*val| {
         val.* = 0.5;
     }
 
-    for (rzig.vec.toSlice(i32, ints)) |*val| {
+    for (ints.toSlice(i32)) |*val| {
         val.* = 0;
     }
 
-    for (rzig.vec.toU32SliceFromLogical(logicals)) |*val| {
+    for (logicals.toU32SliceFromLogical()) |*val| {
         val.* = 0;
     }
 
@@ -261,7 +261,7 @@ export fn testLengthResize() Robject {
     lens[5] = vector.length32();
 
     const results = rzig.vec.allocVector(.IntegerVector, 6).protect();
-    const results_slc = rzig.vec.toSlice(i32, results);
+    const results_slc = results.toSlice(i32);
 
     for (results_slc, lens) |*dest, src| {
         dest.* = @intCast(src);
