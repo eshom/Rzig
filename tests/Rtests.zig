@@ -241,3 +241,31 @@ export fn testAsScalarVectorError() Robject {
     _ = rzig.vec.asScalarVector(2_000_000_000_000);
     unreachable;
 }
+
+export fn testLengthResize() Robject {
+    defer rzig.gc.protect_stack.unprotectAll();
+    var vector = rzig.vec.allocVector(.NumericVector, 10).protect();
+    var lens: [6]usize = undefined;
+
+    lens[0] = vector.length();
+    lens[1] = vector.length32();
+
+    vector = vector.resizeVec(5).protect();
+
+    lens[2] = vector.length();
+    lens[3] = vector.length32();
+
+    vector = vector.resizeVec(100).protect();
+
+    lens[4] = vector.length();
+    lens[5] = vector.length32();
+
+    const results = rzig.vec.allocVector(.IntegerVector, 6).protect();
+    const results_slc = rzig.vec.toSlice(i32, results);
+
+    for (results_slc, lens) |*dest, src| {
+        dest.* = @intCast(src);
+    }
+
+    return results;
+}

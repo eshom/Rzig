@@ -35,38 +35,88 @@ pub fn length(obj: Robject) usize {
 }
 
 /// Get length of R object, 32 bit version
-pub fn length32(obj: Robject) i32 {
+pub fn length32(obj: Robject) usize {
     const len = r.Rf_length(obj);
     return @intCast(len);
 }
 
-/// Resize R vector to shorter length.
+/// Resize R vector.
 /// There is no gurantee allocated object is re-used.
-/// For saftey protect result object.
+///
+/// Caller must protect result object.
 pub fn resizeVec(obj: Robject, new_len: usize) Robject {
-    const len = length(obj);
+    const t = obj.typeOf();
 
-    if (len > new_len) {
-        errors.stop("Cannot enlarge vector. Only shrinking is supported.");
+    switch (t) {
+        .String,
+        .LogicalVector,
+        .IntegerVector,
+        .NumericVector,
+        .ComplexVector,
+        .CharacterVector,
+        .List,
+        .Expression,
+        .RawVector,
+        => return r.Rf_xlengthgets(obj, @intCast(new_len)),
+        else => errors.stop("Trying to resize unsupported type: {any}", .{t}),
     }
-
-    return r.Rf_xlengthgets(obj, @intCast(new_len));
 }
 
-/// Resize R vector to shorter length. 32-bit version
+/// Resize R vector. 32-bit version
 /// See: `resizeVec()`
 pub fn resizeVec32(obj: Robject, new_len: usize) Robject {
-    const len = length(obj);
-
-    if (len > new_len) {
-        errors.stop("Cannot enlarge vector. Only shrinking is supported.");
-    }
+    const len = obj.length();
+    const t = obj.typeOf();
 
     if (len > math.maxInt(c_int)) {
         errors.stop("Trying to resize 64-bit vector with 32-bit version. Use `resizeVec()` instead.");
     }
 
-    return r.Rf_lengthgets(obj, @intCast(new_len));
+    switch (t) {
+        .String,
+        .LogicalVector,
+        .IntegerVector,
+        .NumericVector,
+        .ComplexVector,
+        .CharacterVector,
+        .List,
+        .Expression,
+        .RawVector,
+        => return r.Rf_lengthgets(obj, @intCast(new_len)),
+        else => errors.stop("Trying to resize unsupported type: {any}", .{t}),
+    }
+}
+
+test "length and resize" {
+    const code =
+        \\dyn.load('zig-out/tests/lib/libRtests.so')
+        \\.Call('testLengthResize')
+    ;
+
+    const result = try std.process.Child.run(.{
+        .allocator = testing.allocator,
+        .argv = &.{
+            "Rscript",
+            "--vanilla",
+            "-e",
+            code,
+        },
+    });
+
+    defer testing.allocator.free(result.stdout);
+    defer testing.allocator.free(result.stderr);
+
+    const expected =
+        \\[1]  10  10   5   5 100 100
+        \\
+    ;
+
+    testing.expectEqualStrings(expected, result.stdout) catch |err| {
+        std.debug.print("stderr:\n{s}\n", .{result.stderr});
+        return err;
+    };
+
+    try testing.expectEqualStrings("", result.stderr);
 }
 
 //TODO: Move asVector-like functions to Robject as methods
@@ -147,7 +197,7 @@ pub fn toSlice(T: type, from: Robject) []T {
         errors.stop("Object to coerce must be a vector", .{});
     }
 
-    const len = length(from);
+    const len = from.length();
 
     const out: []T = switch (T) {
         c_int => r.INTEGER(from)[0..len],
@@ -168,7 +218,7 @@ pub fn toBoolSlice(allocator: Allocator, obj: Robject) []bool {
         errors.stop("Object passed must be a logical vector.", .{});
     }
 
-    const len = length(obj);
+    const len = obj.length();
     const out = allocator.alloc(bool, len) catch {
         errors.stop("Failed allocation. Out of memory.", .{});
     };
@@ -187,7 +237,7 @@ pub fn toU32SliceFromLogical(obj: Robject) []u32 {
         errors.stop("Object passed must be a logical vector.", .{});
     }
 
-    const len = length(obj);
+    const len = obj.length();
     return @ptrCast(r.LOGICAL(obj)[0..len]);
 }
 

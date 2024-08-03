@@ -55,7 +55,7 @@ pub fn getString(char_vec: Robject, index: usize) Robject {
         errors.stop("Cannot get string object from non-character vector", .{});
     }
 
-    const len = vec.length(char_vec);
+    const len = char_vec.length();
 
     if (index >= len) {
         errors.stop("Character vector index out of bounds. Index: {d}, length: {d}\n", .{ index, len });
@@ -73,7 +73,7 @@ pub fn setString(char_vec: Robject, index: usize, string_obj: Robject) Robject {
         errors.stop("Cannot assign non-string to character vector");
     }
 
-    const len = vec.length(char_vec);
+    const len = char_vec.length();
 
     if (index >= len) {
         errors.stop("Character vector index out of bounds. Index: {d}, length: {d}\n", .{ index, len });

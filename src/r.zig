@@ -13,6 +13,7 @@ const Robject = rzig.Robject;
 
 // types
 pub const Sexprec = opaque {
+    //TODO: Maybe additional namespace containers to group methods
     const Self = @This();
     /// Protect object from R's GC
     pub fn protect(self: *Self) *Self {
@@ -64,6 +65,22 @@ pub const Sexprec = opaque {
         } else {
             rzig.errors.stop("Expected `.List` object, found: {}", .{self.typeOf()});
         }
+    }
+
+    pub fn length(self: *Self) usize {
+        return rzig.vec.length(self);
+    }
+
+    pub fn length32(self: *Self) usize {
+        return rzig.vec.length32(self);
+    }
+
+    pub fn resizeVec(self: *Self, new_len: usize) Robject {
+        return rzig.vec.resizeVec(self, new_len);
+    }
+
+    pub fn resizeVec32(self: *Self, new_len: usize) Robject {
+        return rzig.vec.resizeVec32(self, new_len);
     }
 };
 
