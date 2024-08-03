@@ -91,6 +91,10 @@ pub const Sexprec = opaque {
     pub fn toU32SliceFromLogical(self: *Self) []u32 {
         return rzig.vec.toU32SliceFromLogical(self);
     }
+
+    pub fn asVector(self: *Self, to: Rtype) Robject {
+        return rzig.vec.asVector(to, self);
+    }
 };
 
 pub const Rcomplex = opaque {};

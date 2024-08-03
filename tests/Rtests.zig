@@ -269,3 +269,20 @@ export fn testLengthResize() Robject {
 
     return results;
 }
+
+export fn testAsVector() Robject {
+    defer rzig.gc.protect_stack.unprotectAll();
+    const numeric = rzig.vec.allocVector(.NumericVector, 3).protect();
+    const result = rzig.vec.allocVector(.List, 2).protect();
+
+    for (numeric.toSlice(f64), 1..4) |*val, num| {
+        val.* = @as(f64, @floatFromInt(num)) * 1.5;
+    }
+
+    const integer = numeric.asVector(.IntegerVector).protect();
+
+    result.setListObj(0, numeric);
+    result.setListObj(1, integer);
+
+    return result;
+}

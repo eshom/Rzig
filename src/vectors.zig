@@ -134,10 +134,47 @@ pub fn asVector(to: Rtype, from: Robject) Robject {
         .List,
         .RawVector,
         => r.Rf_coerceVector(from, @intCast(@intFromEnum(to))),
-        else => @compileError("Coercsion to vector not supported for specified tag"),
+        else => errors.stop("Coercsion to vector not supported for {any}", .{to}),
     };
 
     return out;
+}
+
+test "asVector" {
+    const code =
+        \\dyn.load('zig-out/tests/lib/libRtests.so')
+        \\.Call('testAsVector')
+    ;
+
+    const result = try std.process.Child.run(.{
+        .allocator = testing.allocator,
+        .argv = &.{
+            "Rscript",
+            "--vanilla",
+            "-e",
+            code,
+        },
+    });
+
+    defer testing.allocator.free(result.stdout);
+    defer testing.allocator.free(result.stderr);
+
+    const expected =
+        \\[[1]]
+        \\[1] 1.5 3.0 4.5
+        \\
+        \\[[2]]
+        \\[1] 1 3 4
+        \\
+        \\
+    ;
+
+    testing.expectEqualStrings(expected, result.stdout) catch |err| {
+        std.debug.print("stderr:\n{s}\n", .{result.stderr});
+        return err;
+    };
+
+    try testing.expectEqualStrings("", result.stderr);
 }
 
 /// Get R object from List.
