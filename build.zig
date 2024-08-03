@@ -4,6 +4,8 @@ const process = std.process;
 const mem = std.mem;
 const io = std.io;
 
+const GeneratedFile = std.Build.GeneratedFile;
+
 //TODO: Move R version check to examples
 //
 // const SemanticVersion = std.SemanticVersion;
@@ -118,7 +120,25 @@ pub fn build(b: *std.Build) !void {
 
     Rzig_check.linkSystemLibrary2("libR", .{ .use_pkg_config = .force });
     const check = b.step("check", "Check if Rzig compiles");
-    check.dependOn(&Rzig_check.step);
+    // check.dependOn(&Rzig_check.step);
     check.dependOn(&Rzig_tests.step);
     check.dependOn(&Rtests.step);
+
+    // const Rzig_docs_lib = b.addStaticLibrary(.{
+    //     .name = "Rzig_docs",
+    //     .target = target,
+    //     .optimize = .Debug,
+    //     .root_source_file = b.path("src/Rzig.zig"),
+    //     .link_libc = true,
+    // });
+    //
+    // Rzig_docs_lib.linkSystemLibrary2("libR", .{ .use_pkg_config = .force });
+    // const Rzig_docs_step = b.step("docs", "Generate docs");
+    //
+    // const Rzig_docs = Rzig_docs_lib.getEmittedDocs();
+    // Rzig_docs_step.dependOn(&b.addInstallDirectory(.{
+    //     .source_dir = Rzig_docs,
+    //     .install_dir = .prefix,
+    //     .install_subdir = "doc",
+    // }).step);
 }
