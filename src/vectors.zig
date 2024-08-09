@@ -256,24 +256,101 @@ fn logicalToBool(v: c_int) bool {
 ///
 /// `T` can be one of:
 /// bool, c_int, i32, f64
-/// Otherwise error `UnsupportedType` is returned
 ///
 /// `from` must be an R vector otherwise `NotAVector` error is returned.
 /// Vectors with length greater than 1 return only their first element.
 pub fn asPrimitive(T: type, from: Robject) T {
-    if (!from.isVector()) {
-        errors.stop("Object to coerce must be a vector", .{});
-    }
+    const rtype = from.typeOf();
 
     const out: T = switch (T) {
-        c_int => r.Rf_asInteger(from),
-        i32 => @intCast(r.Rf_asInteger(from)),
-        bool => logicalToBool(r.Rf_asLogical(from)),
-        f64 => r.Rf_asReal(from),
-        else => @compileError("Coercsion is not supported for specified type"),
+        // TODO: Handle the fact that RawVector to integer coercision is not supported for R<=4.4.1
+        c_int => switch (rtype) {
+            .RawVector, .LogicalVector, .IntegerVector, .NumericVector, .ComplexVector, .String, .CharacterVector => r.Rf_asInteger(from),
+            else => errors.stop("Conversion from {} to {} primitive is not supported", .{ rtype, T }),
+        },
+        i32 => switch (rtype) {
+            .RawVector, .LogicalVector, .IntegerVector, .NumericVector, .ComplexVector, .String, .CharacterVector => @intCast(r.Rf_asInteger(from)),
+            else => errors.stop("Conversion from {} to {} primitive is not supported", .{ rtype, T }),
+        },
+        bool => switch (rtype) {
+            .RawVector, .LogicalVector, .IntegerVector, .NumericVector, .ComplexVector, .String, .CharacterVector => logicalToBool(r.Rf_asLogical(from)),
+            else => errors.stop("Conversion from {} to {} primitive is not supported", .{ rtype, T }),
+        },
+        f64 => switch (rtype) {
+            .LogicalVector, .IntegerVector, .NumericVector, .ComplexVector, .String, .CharacterVector => r.Rf_asReal(from),
+            else => errors.stop("Conversion from {} to {} primitive is not supported", .{ rtype, T }),
+        },
+        else => blk: {
+            switch (@typeInfo(T)) {
+                .Float, .ComptimeFloat => switch (rtype) {
+                    .LogicalVector, .IntegerVector, .NumericVector, .ComplexVector, .String, .CharacterVector => break :blk @floatCast(r.Rf_asReal(from)),
+                    else => errors.stop("Conversion from {} to {} primitive is not supported", .{ rtype, T }),
+                },
+                .Int, .ComptimeInt => {
+                    switch (rtype) {
+                        .RawVector, .LogicalVector, .IntegerVector, .NumericVector, .ComplexVector, .String, .CharacterVector => {},
+                        else => errors.stop("Conversion from {} to {} primitive is not supported", .{ rtype, T }),
+                    }
+
+                    if (math.maxInt(T) < math.maxInt(c_int)) {
+                        errors.stop("Type {} cannot fully represent 32-bit integer", .{T});
+                    }
+
+                    break :blk @intCast(r.Rf_asInteger(from));
+                },
+                else => @compileError("Coercsion is not supported for specified type"),
+            }
+        },
     };
 
     return out;
+}
+
+test "asPrimitive" {
+    const code =
+        \\dyn.load('zig-out/tests/lib/libRtests.so')
+        \\obj <- list(10L, 0L, 89.5, as.raw(90))
+        \\.Call('testAsPrimitive', obj)
+    ;
+
+    const result = try std.process.Child.run(.{
+        .allocator = testing.allocator,
+        .argv = &.{
+            "Rscript",
+            "--vanilla",
+            "-e",
+            code,
+        },
+    });
+
+    defer testing.allocator.free(result.stdout);
+    defer testing.allocator.free(result.stderr);
+
+    const expected =
+        \\[[1]]
+        \\[1] 10
+        \\
+        \\[[2]]
+        \\[1] FALSE
+        \\
+        \\[[3]]
+        \\[1] 89
+        \\
+        \\[[4]]
+        \\[1] 90
+        \\
+        \\[[5]]
+        \\[1] "Z"
+        \\
+        \\
+    ;
+
+    testing.expectEqualStrings(expected, result.stdout) catch |err| {
+        std.debug.print("stderr:\n{s}\n", .{result.stderr});
+        return err;
+    };
+
+    try testing.expectEqualStrings("", result.stderr);
 }
 
 /// Convert R object to underlying primitive type slice

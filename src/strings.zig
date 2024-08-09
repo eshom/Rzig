@@ -33,11 +33,15 @@ pub fn getEncoding(obj: Robject) Encoding {
 /// Make String object. Uses current encoding.
 /// R will copy the string if it doesn't have a matching string cached and will managed its memory.
 pub fn makeString(str: []const u8) Robject {
-    if (!(str.len > math.maxInt(i32) - 1)) {
+    if (str.len > math.maxInt(i32)) {
         errors.stop("R does not support strings longer than 2^31 - 1", .{});
     }
 
-    r.Rf_mkCharLen(str.ptr, str.len);
+    if (str.len > math.maxInt(c_int)) {
+        errors.stop("Length value of {} is larger than a 32-bit signed integer can represent", .{str.len});
+    }
+
+    return r.Rf_mkCharLen(str.ptr, @intCast(str.len));
 }
 
 /// Make String object in specified encoding.
@@ -64,13 +68,13 @@ pub fn getString(char_vec: Robject, index: usize) Robject {
     return r.STRING_ELT(char_vec, @intCast(index));
 }
 
-pub fn setString(char_vec: Robject, index: usize, string_obj: Robject) Robject {
+pub fn setString(char_vec: Robject, index: usize, string_obj: Robject) void {
     if (!char_vec.isTypeOf(.CharacterVector)) {
-        errors.stop("Cannot get string object from non-character vector");
+        errors.stop("Cannot get string object from non-character vector", .{});
     }
 
     if (!string_obj.isTypeOf(.String)) {
-        errors.stop("Cannot assign non-string to character vector");
+        errors.stop("Cannot assign non-string to character vector", .{});
     }
 
     const len = char_vec.length();
@@ -79,5 +83,9 @@ pub fn setString(char_vec: Robject, index: usize, string_obj: Robject) Robject {
         errors.stop("Character vector index out of bounds. Index: {d}, length: {d}\n", .{ index, len });
     }
 
-    return r.SET_STRING_ELT(char_vec, index, string_obj);
+    if (index > math.maxInt(c_long)) {
+        errors.stop("Index value of {} is larger than the maximum `c_long` can represent: {}", .{ index, math.maxInt(c_long) });
+    }
+
+    r.SET_STRING_ELT(char_vec, @intCast(index), string_obj);
 }

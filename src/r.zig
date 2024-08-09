@@ -97,6 +97,10 @@ pub const Sexprec = opaque {
     pub fn getListElem(self: *Self, T: type, index: usize) []T {
         return rzig.vec.getListElem(T, self, index);
     }
+
+    pub fn asPrimitive(self: *Self, T: type) T {
+        return rzig.vec.asPrimitive(T, self);
+    }
 };
 
 pub const Rcomplex = opaque {};

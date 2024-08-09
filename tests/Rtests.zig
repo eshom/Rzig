@@ -289,9 +289,6 @@ export fn testAsVector() Robject {
 
 export fn testGetListElem(list: Robject) Robject {
     const nums = list.getListElem(i32, 0);
-    // for (nums) |val| {
-    //     val.* *= 2;
-    // }
 
     const out = rzig.vec.allocVector(.IntegerVector, nums.len).protect();
     defer out.unprotect();
@@ -300,6 +297,30 @@ export fn testGetListElem(list: Robject) Robject {
     for (out_slc, nums) |*dst, src| {
         dst.* = src * 2;
     }
+
+    return out;
+}
+
+export fn testAsPrimitive(list: Robject) Robject {
+    defer rzig.gc.protect_stack.unprotectAll();
+
+    const out = rzig.vec.allocVector(.List, 5).protect();
+
+    const real = list.getListObj(0).asPrimitive(f32);
+    const f = list.getListObj(1).asPrimitive(bool);
+    const num: u15 = @intCast(list.getListObj(2).asPrimitive(u50));
+    const z: u8 = @intCast(list.getListObj(3).asVector(.IntegerVector).protect().asPrimitive(i32));
+
+    const Z: []const u8 = &.{z};
+    const Zchar = rzig.strings.makeString(Z);
+    const char_vec = rzig.vec.allocVector(.CharacterVector, 1).protect();
+    rzig.strings.setString(char_vec, 0, Zchar);
+
+    out.setListObj(0, rzig.vec.asScalarVector(real));
+    out.setListObj(1, rzig.vec.asScalarVector(f));
+    out.setListObj(2, rzig.vec.asScalarVector(num));
+    out.setListObj(3, rzig.vec.asScalarVector(z));
+    out.setListObj(4, char_vec);
 
     return out;
 }
