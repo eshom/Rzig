@@ -69,7 +69,7 @@ test "getEncoding" {
 /// R will copy the string if it doesn't have a matching string cached and will managed its memory.
 pub fn makeString(str: []const u8) Robject {
     if (str.len > math.maxInt(i32)) {
-        errors.stop("R does not support strings longer than 2^31 - 1", .{});
+        errors.stop("makeString(): R does not support strings longer than 2^31 - 1", .{});
     }
 
     if (str.len > math.maxInt(c_int)) {
@@ -82,11 +82,11 @@ pub fn makeString(str: []const u8) Robject {
 /// Make String object in specified encoding.
 /// R will copy the string if it doesn't have a matching string cached and will managed its memory.
 pub fn makeStringEncoding(str: []const u8, encoding: Encoding) Robject {
-    if (!(str.len > math.maxInt(i32) - 1)) {
-        errors.stop("R does not support strings longer than 2^31 - 1", .{});
+    if (str.len > math.maxInt(i32)) {
+        errors.stop("makeStringEncoding(): R does not support strings longer than 2^31 - 1", .{});
     }
 
-    r.Rf_mkCharLenCE(str.ptr, str.len, encoding.int());
+    return r.Rf_mkCharLenCE(str.ptr, @intCast(str.len), encoding);
 }
 
 pub fn getString(char_vec: Robject, index: usize) Robject {

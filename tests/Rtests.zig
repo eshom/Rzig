@@ -311,10 +311,12 @@ export fn testAsPrimitive(list: Robject) Robject {
     const num: u15 = @intCast(list.getListObj(2).asPrimitive(u50));
     const z: u8 = @intCast(list.getListObj(3).asVector(.IntegerVector).protect().asPrimitive(i32));
 
-    const Z: []const u8 = &.{z};
-    const Zchar = rzig.strings.makeString(Z);
-    const char_vec = rzig.vec.allocVector(.CharacterVector, 1).protect();
-    rzig.strings.setString(char_vec, 0, Zchar);
+    const z_cstr: []const u8 = &.{z};
+    const z_char = rzig.strings.makeString(z_cstr);
+    const zig_utf8 = rzig.strings.makeStringEncoding("\u{26a1}zig\u{26a1}", .utf8);
+    const char_vec = rzig.vec.allocVector(.CharacterVector, 2).protect();
+    rzig.strings.setString(char_vec, 0, z_char);
+    rzig.strings.setString(char_vec, 1, zig_utf8);
 
     out.setListObj(0, rzig.vec.asScalarVector(real));
     out.setListObj(1, rzig.vec.asScalarVector(f));
