@@ -101,6 +101,17 @@ pub const Sexprec = opaque {
     pub fn asPrimitive(self: *Self, T: type) T {
         return rzig.vec.asPrimitive(T, self);
     }
+
+    // --------------
+    // --- String ---
+    // --------------
+    pub fn getEncoding(self: *Self) Encoding {
+        return rzig.strings.getEncoding(self);
+    }
+
+    pub fn getString(self: *Self, index: usize) Robject {
+        return rzig.strings.getString(self, index);
+    }
 };
 
 pub const Rcomplex = opaque {};

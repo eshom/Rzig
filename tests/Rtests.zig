@@ -324,3 +324,8 @@ export fn testAsPrimitive(list: Robject) Robject {
 
     return out;
 }
+
+export fn testGetEncoding(charvec: Robject) Robject {
+    const enc = charvec.getString(0).getEncoding();
+    return rzig.vec.asScalarVector(enc == .bytes);
+}

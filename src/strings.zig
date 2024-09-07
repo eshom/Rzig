@@ -1,6 +1,7 @@
 const std = @import("std");
 const mem = std.mem;
 const math = std.math;
+const testing = std.testing;
 
 const r = @import("r.zig");
 const rzig = @import("Rzig.zig");
@@ -25,9 +26,43 @@ pub const Encoding = enum(c_uint) {
 /// Get encoding from internal C string object
 pub fn getEncoding(obj: Robject) Encoding {
     if (!obj.isTypeOf(.String)) {
-        errors.stop("Cannot get encoding from non-string object");
+        errors.stop("Cannot get encoding from non-string object", .{});
     }
-    return @enumFromInt(r.Rf_getCharCE(obj));
+    return r.Rf_getCharCE(obj);
+}
+
+test "getEncoding" {
+    const code =
+        \\dyn.load('zig-out/tests/lib/libRtests.so')
+        \\smile <- "\U0001f604"
+        \\Encoding(smile) <- "bytes"
+        \\.Call('testGetEncoding', smile)
+    ;
+
+    const result = try std.process.Child.run(.{
+        .allocator = testing.allocator,
+        .argv = &.{
+            "Rscript",
+            "--vanilla",
+            "-e",
+            code,
+        },
+    });
+
+    defer testing.allocator.free(result.stdout);
+    defer testing.allocator.free(result.stderr);
+
+    const expected =
+        \\[1] TRUE
+        \\
+    ;
+
+    testing.expectEqualStrings(expected, result.stdout) catch |err| {
+        std.debug.print("stderr:\n{s}\n", .{result.stderr});
+        return err;
+    };
+
+    try testing.expectEqualStrings("", result.stderr);
 }
 
 /// Make String object. Uses current encoding.
