@@ -112,6 +112,10 @@ pub const Sexprec = opaque {
     pub fn getString(self: *Self, index: usize) Robject {
         return rzig.strings.getString(self, index);
     }
+
+    pub fn setString(self: *Self, index: usize, string_obj: Robject) void {
+        rzig.strings.setString(self, index, string_obj);
+    }
 };
 
 pub const Rcomplex = opaque {};

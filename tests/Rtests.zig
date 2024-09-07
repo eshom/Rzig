@@ -176,7 +176,7 @@ export fn testIsObjects(list: Robject) Robject {
     defer rzig.gc.protect_stack.unprotectAll();
 
     const char_vec = list.getListObj(7);
-    const string_obj = rzig.strings.getString(char_vec, 0);
+    const string_obj = char_vec.getString(0);
 
     const ext_ptr = rzig.pointers.makeExternalPtr(@ptrCast(@constCast(&string_obj)), r_null.*, r_null.*);
 
@@ -315,8 +315,8 @@ export fn testAsPrimitive(list: Robject) Robject {
     const z_char = rzig.strings.makeString(z_cstr);
     const zig_utf8 = rzig.strings.makeStringEncoding("\u{26a1}zig\u{26a1}", .utf8);
     const char_vec = rzig.vec.allocVector(.CharacterVector, 2).protect();
-    rzig.strings.setString(char_vec, 0, z_char);
-    rzig.strings.setString(char_vec, 1, zig_utf8);
+    char_vec.setString(0, z_char);
+    char_vec.setString(1, zig_utf8);
 
     out.setListObj(0, rzig.vec.asScalarVector(real));
     out.setListObj(1, rzig.vec.asScalarVector(f));
