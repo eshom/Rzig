@@ -28,8 +28,9 @@ pub const r_allocator: Allocator = .{
 
 const r_allocator_vtable: Allocator.VTable = .{
     .alloc = RCalloc,
-    .resize = RRealloc,
+    .resize = RResize,
     .free = RFree,
+    .remap = RRealloc,
 };
 
 /// Following implementation of `std.heap.c_allocator`.
@@ -37,13 +38,13 @@ const r_allocator_vtable: Allocator.VTable = .{
 ///
 /// Caller should free memory.
 /// It is not freed by R's GC.
-fn RCalloc(ctx: *anyopaque, size: usize, ptr_align_exp: u8, ret_addr: usize) ?[*]u8 {
+fn RCalloc(ctx: *anyopaque, size: usize, ptr_align_exp: mem.Alignment, ret_addr: usize) ?[*]u8 {
     _ = ctx;
     _ = ret_addr;
 
     RAssert(size > 0, "trying to allocate 0 bytes");
 
-    const alignment = @as(usize, 1) << @as(Allocator.Log2Align, @intCast(ptr_align_exp));
+    const alignment = @as(usize, 1) << @intFromEnum(ptr_align_exp);
 
     // Following implementation example in `std.heap.c_allocator`
     const unaligned_ptr: [*]u8 = @ptrCast(r.R_chk_calloc(size + alignment - 1 + @sizeOf(usize), 1) orelse return null);
@@ -55,7 +56,25 @@ fn RCalloc(ctx: *anyopaque, size: usize, ptr_align_exp: u8, ret_addr: usize) ?[*
     return aligned_ptr;
 }
 
-fn RRealloc(ctx: *anyopaque, buf: []u8, buf_align: u8, new_len: usize, ret_addr: usize) bool {
+fn RRealloc(ctx: *anyopaque, memory: []u8, alignment: mem.Alignment, new_len: usize, ret_addr: usize) ?[*]u8 {
+    _ = ctx;
+    _ = ret_addr;
+
+    RAssert(new_len > 0, "trying to remap to 0 bytes, use `free` instead");
+
+    const unaligned_ptr = getHeader(memory.ptr).*;
+    const new_bytes: usize = @sizeOf(usize) + alignment.toByteUnits() - 1 + new_len;
+    const new_unaligned_ptr: [*]u8 = @ptrCast(r.R_chk_realloc(unaligned_ptr, new_bytes) orelse return null);
+    const new_unaligned_addr: usize = @intFromPtr(new_unaligned_ptr);
+    const new_aligned_addr = mem.alignForward(usize, new_unaligned_addr + @sizeOf(usize), alignment.toByteUnits());
+    const new_aligned_ptr = new_unaligned_ptr + (new_aligned_addr - new_unaligned_addr);
+    getHeader(new_aligned_ptr).* = new_unaligned_ptr;
+
+    return new_aligned_ptr;
+}
+
+/// TODO: Does this implementaion leak?
+fn RResize(ctx: *anyopaque, buf: []u8, buf_align: mem.Alignment, new_len: usize, ret_addr: usize) bool {
     _ = ctx;
     _ = buf_align;
     _ = ret_addr;
@@ -71,7 +90,7 @@ fn RRealloc(ctx: *anyopaque, buf: []u8, buf_align: u8, new_len: usize, ret_addr:
     }
 }
 
-fn RFree(ctx: *anyopaque, buf: []u8, buf_align: u8, ret_addr: usize) void {
+fn RFree(ctx: *anyopaque, buf: []u8, buf_align: mem.Alignment, ret_addr: usize) void {
     _ = buf_align;
     _ = ctx;
     _ = ret_addr;

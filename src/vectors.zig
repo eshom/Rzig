@@ -282,11 +282,11 @@ pub fn asPrimitive(T: type, from: Robject) T {
         },
         else => blk: {
             switch (@typeInfo(T)) {
-                .Float, .ComptimeFloat => switch (rtype) {
+                .float, .comptime_float => switch (rtype) {
                     .LogicalVector, .IntegerVector, .NumericVector, .ComplexVector, .String, .CharacterVector => break :blk @floatCast(r.Rf_asReal(from)),
                     else => errors.stop("Conversion from {} to {} primitive is not supported", .{ rtype, T }),
                 },
-                .Int, .ComptimeInt => {
+                .int, .comptime_int => {
                     switch (rtype) {
                         .RawVector, .LogicalVector, .IntegerVector, .NumericVector, .ComplexVector, .String, .CharacterVector => {},
                         else => errors.stop("Conversion from {} to {} primitive is not supported", .{ rtype, T }),
@@ -416,10 +416,10 @@ pub fn asScalarVector(from: anytype) Robject {
         bool => r.Rf_ScalarLogical(@intCast(@intFromBool(from))),
         else => blk: {
             switch (@typeInfo(T)) {
-                .Float, .ComptimeFloat => {
+                .float, .comptime_float => {
                     break :blk r.Rf_ScalarReal(@floatCast(from));
                 },
-                .Int, .ComptimeInt => {
+                .int, .comptime_int => {
                     if (from > math.maxInt(c_int)) {
                         errors.stop("Number is larger than 32-bit integer can represent. Max: {d}, found: {d}", .{ math.maxInt(c_int), from });
                     }

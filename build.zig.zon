@@ -1,5 +1,6 @@
 .{
-    .name = "Rzig",
+    .name = .Rzig,
+    .fingerprint = 0x7ecfd1a6ad562f05,
     .version = "0.0.1",
     .dependencies = .{},
     .paths = .{
