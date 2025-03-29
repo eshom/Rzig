@@ -2,7 +2,12 @@
     .name = .Rzig,
     .fingerprint = 0x7ecfd1a6ad562f05,
     .version = "0.0.1",
-    .dependencies = .{},
+    .dependencies = .{
+        .rsource = .{
+            .url = "git+https://github.com/wch/r-source#b17e317062cfd282a1d481a844ec7ef1e315f85d",
+            .hash = "N-V-__8AAMn96wTUeyw2wHmu0b6V80MWQ9j9nbqSBj-WxFMh",
+        },
+    },
     .paths = .{
         "build.zig",
         "build.zig.zon",
