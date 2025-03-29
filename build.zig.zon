@@ -4,8 +4,8 @@
     .version = "0.0.1",
     .dependencies = .{
         .rsource = .{
-            .url = "git+https://github.com/wch/r-source#b17e317062cfd282a1d481a844ec7ef1e315f85d",
-            .hash = "N-V-__8AAMn96wTUeyw2wHmu0b6V80MWQ9j9nbqSBj-WxFMh",
+            .url = "https://cran.r-project.org/src/base/R-4/R-4.4.3.tar.gz",
+            .hash = "N-V-__8AAONWEQa4ykXlk59i2A4-jSpsJs17n9fi35B4Usoi",
         },
     },
     .paths = .{
