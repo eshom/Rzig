@@ -46,6 +46,7 @@ pub fn build(b: *std.Build) !void {
         },
     );
     configure_run.setEnvironmentVariable("MAKE", "make -j6");
+    _ = configure_run.captureStdOut(); // hack to make configure run once
     b.step("configure", "Run configure for R source").dependOn(&configure_run.step);
 
     const make_run = rsource.builder.addSystemCommand(&.{make});
