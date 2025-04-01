@@ -72,9 +72,6 @@ pub fn build(b: *std.Build) !void {
             .{ .name = "Rzig", .module = rzig_mod },
         },
     });
-    rtests_mod.addLibraryPath(b.path("zig-out/lib"));
-    rtests_mod.linkSystemLibrary("R", .{ .use_pkg_config = .no });
-    rtests_mod.linkSystemLibrary("Rblas", .{ .use_pkg_config = .no });
 
     // R lib compiled by zig for tests
     const rtests = b.addLibrary(.{
