@@ -16,26 +16,36 @@ pub fn build(b: *std.Build) !void {
     const configure_run = rsource.builder.addSystemCommand(
         &.{
             "./configure",
-            "--enable-R-shlib", // builds the shared library
+            "--enable-R-shlib", // builds the R shared library
+            "--enable-BLAS-shlib", // builds the Rblas shared library
             "--disable-R-profiling",
             "--disable-java",
             "--disable-byte-compiled-packages",
             "--disable-byte-compiled-packages",
             "--disable-shared",
             "--disable-nls",
+            "--disable-R-framework",
             "--disable-openmp",
+            "--disable-rpath",
+            "--enable-year2038",
             "--without-recommended-packages",
             "--without-readline",
+            "--without-aqua",
             "--without-tcltk",
             "--without-cairo",
             "--without-libpng",
             "--without-jpeglib",
             "--without-libtiff",
+            "--without-system-tre",
             "--without-ICU",
             "--without-x",
             "--without-libdeflate-compression",
+            "--without-libpth-prefix",
+            "--without-included-gettext",
+            "--without-newAccelerate",
         },
     );
+    configure_run.setEnvironmentVariable("MAKE", "make -j6");
     b.step("configure", "Run configure for R source").dependOn(&configure_run.step);
 
     const make_run = rsource.builder.addSystemCommand(&.{make});
