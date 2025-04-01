@@ -44,9 +44,12 @@ pub fn build(b: *std.Build) !void {
 
     const libr_install = b.addInstallLibFile(rsource.builder.path("lib/libR.so"), "libR.so");
     libr_install.step.dependOn(&make_run.step);
+    const librblas_install = b.addInstallLibFile(rsource.builder.path("lib/libRblas.so"), "libRblas.so");
+    librblas_install.step.dependOn(&make_run.step);
 
     const libr = b.step("libR", "Build R library from source. Run `zig build configure` first");
     libr.dependOn(&libr_install.step);
+    libr.dependOn(&librblas_install.step);
 
     // Zig public module, to be used by the package manager
     const rzig_mod = b.addModule("Rzig", .{
@@ -58,6 +61,7 @@ pub fn build(b: *std.Build) !void {
     });
     rzig_mod.addLibraryPath(b.path("zig-out/lib"));
     rzig_mod.linkSystemLibrary("R", .{ .use_pkg_config = .no });
+    rzig_mod.linkSystemLibrary("Rblas", .{ .use_pkg_config = .no });
 
     const rtests_mod = b.createModule(.{
         .root_source_file = b.path("tests/Rtests.zig"),
@@ -70,6 +74,7 @@ pub fn build(b: *std.Build) !void {
     });
     rtests_mod.addLibraryPath(b.path("zig-out/lib"));
     rtests_mod.linkSystemLibrary("R", .{ .use_pkg_config = .no });
+    rtests_mod.linkSystemLibrary("Rblas", .{ .use_pkg_config = .no });
 
     // R lib compiled by zig for tests
     const rtests = b.addLibrary(.{
@@ -94,6 +99,7 @@ pub fn build(b: *std.Build) !void {
     });
 
     const run_rzig_tests = b.addRunArtifact(rzig_tests);
+    run_rzig_tests.setEnvironmentVariable("LD_LIBRARY_PATH", "zig-out/lib");
     run_rzig_tests.has_side_effects = true; // tests call child R process
 
     const test_step = b.step("test", "Run unit tests");
