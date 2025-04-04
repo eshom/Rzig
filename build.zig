@@ -8,13 +8,19 @@ pub fn build(b: *std.Build) !void {
 
     const rsource = b.dependency("rsource", .{});
 
-    const configure = configureCommand(rsource);
+    const configure = configureCommand(b, rsource);
+
+    const config_write = b.addWriteFiles();
+    config_write.step.dependOn(&configure.step);
+    const config_status = config_write.addCopyFile(rsource.builder.path("config.status"), "config.status");
 
     b.step("make-clean", "Run `make clean` for R source cache")
         .dependOn(&makeCommand(b, rsource, "clean").step);
 
     const make = makeCommand(b, rsource, null);
-    make.step.dependOn(&configure.step);
+    make.addFileInput(config_status);
+    _ = make.captureStdOut();
+    make.step.dependOn(&config_write.step);
 
     const libnames: [3][]const u8 = .{ "libR.so", "libRblas.so", "libRlapack.so" };
     const copyfiles, const artifacts = copyMakeArtifacts(
@@ -44,8 +50,8 @@ pub fn build(b: *std.Build) !void {
     rzig_mod.linkSystemLibrary("R", .{ .use_pkg_config = .no });
     rzig_mod.linkSystemLibrary("Rblas", .{ .use_pkg_config = .no });
 
-    // TODO: Make test lib depend on libr after I figure out how to cache make
     const rtests = addRTestLibInstall(b, .{ &target, &optimize }, rzig_mod);
+    rtests.step.dependOn(b.getInstallStep());
 
     // General tests that depend on Rtests library
     const rzig_tests = b.addTest(.{
@@ -53,11 +59,12 @@ pub fn build(b: *std.Build) !void {
         .filter = b.option([]const u8, "test-filter", "String to filter tests by"),
     });
 
+    // TODO: Move R executable to zig-out, and have tests call that
+    // istead of having this system dependency.
+
     const run_tests = b.addRunArtifact(rzig_tests);
     run_tests.setEnvironmentVariable("LD_LIBRARY_PATH", "zig-out/lib");
     run_tests.has_side_effects = true; // tests call R process
-    // TODO: Move R executable to zig-out, and have tests call that
-    // istead of having this system dependency.
 
     const test_step = b.step("test", "Run unit tests");
     test_step.dependOn(&rtests.step);
@@ -69,7 +76,7 @@ pub fn build(b: *std.Build) !void {
     check.dependOn(&rtests.artifact.step);
 }
 
-fn configureCommand(dep: *std.Build.Dependency) *std.Build.Step.Run {
+fn configureCommand(b: *std.Build, dep: *std.Build.Dependency) *std.Build.Step.Run {
     const configure = dep.builder.addSystemCommand(&.{"./configure"});
     configure.addArgs(
         &.{
@@ -103,7 +110,10 @@ fn configureCommand(dep: *std.Build.Dependency) *std.Build.Step.Run {
         },
     );
     configure.setEnvironmentVariable("MAKE", "make -j6");
-    _ = configure.captureStdOut(); // hack to make configure run once
+    const force_conf = b.option(bool, "force-configure", "Force configure to re-run") orelse false;
+    if (!force_conf) {
+        _ = configure.captureStdOut(); // hack to make configure run once
+    }
     return configure;
 }
 
