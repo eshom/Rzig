@@ -3,19 +3,78 @@ const std = @import("std");
 const GeneratedFile = std.Build.GeneratedFile;
 
 pub fn build(b: *std.Build) !void {
-    const make = b.findProgram(
-        &.{"make"},
-        &.{},
-    ) catch std.debug.panic("could not find `make`. It's required to build R.", .{});
-
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
     const rsource = b.dependency("rsource", .{});
 
-    const configure_run = rsource.builder.addSystemCommand(
+    const configure = configureCommand(rsource);
+    b.step("configure", "Run configure for R source").dependOn(&configure.step);
+
+    b.step("make-clean", "Run `make clean` for R source")
+        .dependOn(&makeCommand(b, rsource, "clean").step);
+
+    const make = makeCommand(b, rsource, null);
+    make.step.dependOn(&configure.step);
+
+    const libnames: [3][]const u8 = .{ "libR.so", "libRblas.so", "libRlapack.so" };
+    const copyfiles, const artifacts = copyMakeArtifacts(
+        b,
+        .{
+            rsource.builder.path("lib/" ++ libnames[0]),
+            rsource.builder.path("lib/" ++ libnames[1]),
+            rsource.builder.path("lib/" ++ libnames[2]),
+        },
+    );
+    copyfiles.step.dependOn(&make.step);
+
+    const libr = b.step("libR", "Build R library from source. Run `zig build configure` first");
+
+    for (artifacts, libnames) |art, lib| {
+        const install = b.addInstallLibFile(art, lib);
+        install.step.dependOn(&copyfiles.step);
+        libr.dependOn(&install.step);
+    }
+
+    const rzig_mod = b.addModule("Rzig", .{
+        .root_source_file = b.path("src/Rzig.zig"),
+        .target = target,
+        .optimize = optimize,
+        .link_libc = true,
+        .pic = true,
+    });
+    rzig_mod.addLibraryPath(b.path("zig-out/lib"));
+    rzig_mod.linkSystemLibrary("R", .{ .use_pkg_config = .no });
+    rzig_mod.linkSystemLibrary("Rblas", .{ .use_pkg_config = .no });
+
+    const rtests = addRTestLibInstall(b, .{ &target, &optimize }, rzig_mod);
+
+    // General tests that depend on Rtests library
+    const rzig_tests = b.addTest(.{
+        .root_module = rzig_mod,
+        .filter = b.option([]const u8, "test-filter", "String to filter tests by"),
+    });
+
+    const run_tests = b.addRunArtifact(rzig_tests);
+    run_tests.setEnvironmentVariable("LD_LIBRARY_PATH", "zig-out/lib");
+    run_tests.has_side_effects = true; // tests call R process
+    // TODO: Move R executable to zig-out, and have tests call that
+    // istead of having this system dependency.
+
+    const test_step = b.step("test", "Run unit tests");
+    test_step.dependOn(&rtests.step);
+    test_step.dependOn(&run_tests.step);
+
+    // LSP build check
+    const check = b.step("check", "Check compile errors");
+    check.dependOn(&rzig_tests.step);
+    check.dependOn(&rtests.artifact.step);
+}
+
+fn configureCommand(dep: *std.Build.Dependency) *std.Build.Step.Run {
+    const configure = dep.builder.addSystemCommand(&.{"./configure"});
+    configure.addArgs(
         &.{
-            "./configure",
             "--enable-R-shlib", // builds the R shared library
             "--enable-BLAS-shlib", // builds the Rblas shared library
             "--disable-R-profiling",
@@ -45,53 +104,67 @@ pub fn build(b: *std.Build) !void {
             "--without-newAccelerate",
         },
     );
-    configure_run.setEnvironmentVariable("MAKE", "make -j6");
-    _ = configure_run.captureStdOut(); // hack to make configure run once
-    b.step("configure", "Run configure for R source").dependOn(&configure_run.step);
+    configure.setEnvironmentVariable("MAKE", "make -j6");
+    _ = configure.captureStdOut(); // hack to make configure run once
+    return configure;
+}
 
-    const make_run = rsource.builder.addSystemCommand(&.{make});
-    const make_clean = rsource.builder.addSystemCommand(&.{ make, "clean" });
-    b.step("make-clean", "Run `make clean` for R source").dependOn(&make_clean.step);
+fn makeCommand(
+    b: *std.Build,
+    dep: *std.Build.Dependency,
+    subcmd: ?[]const u8,
+) *std.Build.Step.Run {
+    const make_prog = b.findProgram(
+        &.{"make"},
+        &.{},
+    ) catch std.debug.panic("could not find `make`. It's required to build R.", .{});
 
-    const libr_install = b.addInstallLibFile(rsource.builder.path("lib/libR.so"), "libR.so");
-    libr_install.step.dependOn(&make_run.step);
-    const librblas_install = b.addInstallLibFile(rsource.builder.path("lib/libRblas.so"), "libRblas.so");
-    librblas_install.step.dependOn(&make_run.step);
+    const make = if (subcmd) |sub| withsub: {
+        break :withsub dep.builder.addSystemCommand(&.{ make_prog, sub });
+    } else nosub: {
+        break :nosub dep.builder.addSystemCommand(&.{make_prog});
+    };
 
-    const libr = b.step("libR", "Build R library from source. Run `zig build configure` first");
-    libr.dependOn(&libr_install.step);
-    libr.dependOn(&librblas_install.step);
+    return make;
+}
 
-    // Zig public module, to be used by the package manager
-    const rzig_mod = b.addModule("Rzig", .{
-        .root_source_file = b.path("src/Rzig.zig"),
-        .target = target,
-        .optimize = optimize,
-        .link_libc = true,
-        .pic = true,
-    });
-    rzig_mod.addLibraryPath(b.path("zig-out/lib"));
-    rzig_mod.linkSystemLibrary("R", .{ .use_pkg_config = .no });
-    rzig_mod.linkSystemLibrary("Rblas", .{ .use_pkg_config = .no });
+fn copyMakeArtifacts(
+    b: *std.Build,
+    artifacts: [3]std.Build.LazyPath,
+) struct { *std.Build.Step.WriteFile, [3]std.Build.LazyPath } {
+    const lib1, const lib2, const lib3 = artifacts;
+    const awf = b.addWriteFiles();
+    const out1 = awf.addCopyFile(lib1, lib1.getDisplayName());
+    const out2 = awf.addCopyFile(lib2, lib2.getDisplayName());
+    const out3 = awf.addCopyFile(lib3, lib3.getDisplayName());
+    return .{ awf, .{ out1, out2, out3 } };
+}
 
+fn addRTestLibInstall(
+    b: *std.Build,
+    target_optimize: struct {
+        *const std.Build.ResolvedTarget,
+        *const std.builtin.OptimizeMode,
+    },
+    rmod: *std.Build.Module,
+) *std.Build.Step.InstallArtifact {
     const rtests_mod = b.createModule(.{
         .root_source_file = b.path("tests/Rtests.zig"),
-        .target = target,
-        .optimize = optimize,
+        .target = target_optimize[0].*,
+        .optimize = target_optimize[1].*,
         .pic = true,
         .imports = &.{
-            .{ .name = "Rzig", .module = rzig_mod },
+            .{ .name = "Rzig", .module = rmod },
         },
     });
 
-    // R lib compiled by zig for tests
     const rtests = b.addLibrary(.{
         .name = "Rtests",
         .linkage = .dynamic,
         .root_module = rtests_mod,
     });
 
-    const rtests_install = b.addInstallArtifact(
+    return b.addInstallArtifact(
         rtests,
         .{
             .dest_dir = .{
@@ -99,23 +172,4 @@ pub fn build(b: *std.Build) !void {
             },
         },
     );
-
-    // General tests that depend on Rtests library
-    const rzig_tests = b.addTest(.{
-        .root_module = rzig_mod,
-        .filter = b.option([]const u8, "test-filter", "String to filter tests by"),
-    });
-
-    const run_rzig_tests = b.addRunArtifact(rzig_tests);
-    run_rzig_tests.setEnvironmentVariable("LD_LIBRARY_PATH", "zig-out/lib");
-    run_rzig_tests.has_side_effects = true; // tests call child R process
-
-    const test_step = b.step("test", "Run unit tests");
-    test_step.dependOn(&rtests_install.step);
-    test_step.dependOn(&run_rzig_tests.step);
-
-    // LSP build check
-    const check = b.step("check", "Check compile errors");
-    check.dependOn(&rzig_tests.step);
-    check.dependOn(&rtests.step);
 }
