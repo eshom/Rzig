@@ -9,9 +9,8 @@ pub fn build(b: *std.Build) !void {
     const rsource = b.dependency("rsource", .{});
 
     const configure = configureCommand(rsource);
-    b.step("configure", "Run configure for R source").dependOn(&configure.step);
 
-    b.step("make-clean", "Run `make clean` for R source")
+    b.step("make-clean", "Run `make clean` for R source cache")
         .dependOn(&makeCommand(b, rsource, "clean").step);
 
     const make = makeCommand(b, rsource, null);
@@ -28,12 +27,10 @@ pub fn build(b: *std.Build) !void {
     );
     copyfiles.step.dependOn(&make.step);
 
-    const libr = b.step("libR", "Build R library from source. Run `zig build configure` first");
-
     for (artifacts, libnames) |art, lib| {
         const install = b.addInstallLibFile(art, lib);
         install.step.dependOn(&copyfiles.step);
-        libr.dependOn(&install.step);
+        b.getInstallStep().dependOn(&install.step);
     }
 
     const rzig_mod = b.addModule("Rzig", .{
@@ -47,6 +44,7 @@ pub fn build(b: *std.Build) !void {
     rzig_mod.linkSystemLibrary("R", .{ .use_pkg_config = .no });
     rzig_mod.linkSystemLibrary("Rblas", .{ .use_pkg_config = .no });
 
+    // TODO: Make test lib depend on libr after I figure out how to cache make
     const rtests = addRTestLibInstall(b, .{ &target, &optimize }, rzig_mod);
 
     // General tests that depend on Rtests library
